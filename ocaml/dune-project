@@ -1,0 +1,26 @@
+(lang dune 3.16)
+
+(name rfxp)
+
+(generate_opam_files true)
+
+(source
+ (github rozlynd/random-forest-fxai))
+
+(authors "Rosalie Defourne <rosalie.defourne@irit.fr>")
+
+(maintainers "Rosalie Defourne <rosalie.defourne@irit.fr>")
+
+(license GPL-3.0)
+
+;(documentation https://url/to/documentation)
+
+(package
+ (name rfxp)
+ (synopsis "Certified Explainer for Random Forests")
+ (description "An OCaml program certified in Coq for deriving explanations for the predictions of a random forest classifier")
+ (depends ocaml)
+ (tags
+  ("AI Explanability" "Formal Methods" "Proof of Programs")))
+
+; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

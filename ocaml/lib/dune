@@ -1,0 +1,4 @@
+(library
+ (name rfxp)
+ (libraries coq-core.kernel)
+ (flags -w -unused-open))
