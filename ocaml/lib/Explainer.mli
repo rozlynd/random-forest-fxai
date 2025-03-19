@@ -1,8 +1,21 @@
 open DT
-open InputData
+open Features
 
-val print_class : coq_class -> unit
+module type InputDataSig =
+ sig
+  type coq_class
 
-val read_input : unit -> input_data
+  val n_features : int
 
-val main : unit -> unit
+  val features : featureList
+
+  val decision_tree : coq_class decisionTree
+
+  val instance : featureSpace
+ end
+
+module Main :
+ functor (D:InputDataSig) ->
+ sig
+  val main : unit -> D.coq_class
+ end

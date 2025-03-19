@@ -1,3 +1,5 @@
 open Rfxp
 
-let () = Explainer.main ()
+module Rfxp_main = Explainer.Main(Driver.InputData)
+
+let () = print_endline (Rfxp_main.main ())

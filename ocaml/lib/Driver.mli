@@ -1,6 +1,2 @@
-open Features
-open DT
-
-val read_input : unit -> InputData.input_data
-
-val print_class : string -> unit
+module InputData : Explainer.InputDataSig
+with type coq_class = string

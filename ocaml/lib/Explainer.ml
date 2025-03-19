@@ -1,19 +1,24 @@
 open DT
-open InputData
+open Features
 
-(** val print_class : coq_class -> unit **)
+module type InputDataSig =
+ sig
+  type coq_class
 
-let print_class = Driver.print_class
+  val n_features : int
 
-(** val read_input : unit -> input_data **)
+  val features : featureList
 
-let read_input = Driver.read_input
+  val decision_tree : coq_class decisionTree
 
-(** val main : unit -> unit **)
+  val instance : featureSpace
+ end
 
-let main _ =
-  let input = read_input () in
-  let fs = input.features in
-  let dt = input.decision_tree in
-  let x = input.instance in
-  let c = evalDT input.n_features fs dt x in print_class c
+module Main =
+ functor (D:InputDataSig) ->
+ struct
+  (** val main : unit -> D.coq_class **)
+
+  let main _ =
+    evalDT D.n_features D.features D.decision_tree D.instance
+ end

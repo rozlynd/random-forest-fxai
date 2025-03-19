@@ -8,5 +8,4 @@
 ./Sat.v
 ./Encoding.v
 ./Explainer.v
-./InputData.v
 ./Extract.v
