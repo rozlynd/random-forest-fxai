@@ -1,4 +1,5 @@
-open BinPos
+open Ascii
+open BinNat
 open Bool
 open Datatypes
 open Decimal
@@ -7,7 +8,7 @@ open Number
 
 type __ = Obj.t
 
-module N :
+module N_as_OT :
  sig
   type t = int
 
@@ -259,4 +260,20 @@ module N :
   val ones : int -> int
 
   val lnot : int -> int -> int
+ end
+
+module Ascii_as_OT :
+ sig
+  val compare : char -> char -> comparison
+ end
+
+module String_as_OT :
+ sig
+  type t = string
+
+  val eqb : string -> string -> bool
+
+  val eq_dec : string -> string -> bool
+
+  val compare : string -> string -> comparison
  end

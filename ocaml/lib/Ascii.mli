@@ -1,3 +1,5 @@
-open Datatypes
+open BinNat
 
-val compare : char -> char -> comparison
+val coq_N_of_digits : bool list -> int
+
+val coq_N_of_ascii : char -> int

@@ -1,13 +1,7 @@
-open Datatypes
 open MSetInterface
 open MSetList
 open Orders
-open String0
-
-type __ = Obj.t
-
-module StringDSO :
- DecStrOrder with type t = string
+open OrdersEx
 
 module StringOT :
  OrderedType with type t = string

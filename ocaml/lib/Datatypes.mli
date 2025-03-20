@@ -1,4 +1,6 @@
 
+val negb : bool -> bool
+
 val fst : ('a1 * 'a2) -> 'a1
 
 val snd : ('a1 * 'a2) -> 'a2
