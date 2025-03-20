@@ -40,23 +40,6 @@ Module StringSetProperties := OrdProperties StringSet.
 Export StringSetProperties.P.
 
 
-Section StringSetTesting.
-
-    Import StringSet.
-    Open Scope string_scope.
-
-    Lemma test1 : In "Hello World!" (singleton "Hello World!").
-    Proof. auto. Admitted.
-
-    Lemma test2 : ~ In "Goodbye World!" (singleton "Hello World!").
-    Proof. auto. Admitted.
-
-    Lemma test3 : cardinal (add "Hello" (add "World!" empty)) = 2.
-    Proof. auto. Admitted.
-
-End StringSetTesting.
-
-
 Section EnumDefinition.
 
     Import StringSet.
