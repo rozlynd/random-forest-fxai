@@ -30,27 +30,26 @@ let testFeature _ fs x i t0 =
 
 (** val boolean_feature : feature **)
 
-let boolean_feature _ b =
-  Obj.magic b
+let boolean_feature =
+  Obj.magic (fun _ b -> b)
 
 type int_test =
-| Coq_int_eq
-| Coq_int_le
+| Coq_int_eq of Z.t
+| Coq_int_le of Z.t
 
 (** val int_feature : feature **)
 
-let int_feature pat a =
-  let (t0, b) = Obj.magic pat in
-  (match t0 with
-   | Coq_int_eq -> Z.eqb (Obj.magic a) b
-   | Coq_int_le -> Z.leb (Obj.magic a) b)
+let int_feature t0 a =
+  match Obj.magic t0 with
+  | Coq_int_eq b -> Z.eqb (Obj.magic a) b
+  | Coq_int_le b -> Z.leb (Obj.magic a) b
 
 (** val float_feature : feature **)
 
-let float_feature y x =
-  ltb (Obj.magic x) (Obj.magic y)
+let float_feature t0 x =
+  ltb (Obj.magic x) (Obj.magic t0)
 
 (** val enum_feature : StringSet.t -> feature **)
 
-let enum_feature _ p x =
-  Obj.magic p x
+let enum_feature _ t0 x =
+  Obj.magic t0 x

@@ -3,6 +3,8 @@ open Datatypes
 
 module Z =
  struct
+  type t = int
+
   (** val compare : int -> int -> comparison **)
 
   let compare = fun x y -> if x=y then Eq else if x<y then Lt else Gt

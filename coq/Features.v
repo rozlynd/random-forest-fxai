@@ -40,10 +40,12 @@ End FeaturesGeneral.
 Section BooleanFeature.
 
     (* The only test for a Boolean feature is to check the Boolean value *)
+    Variant boolean_test := bool_check.
+
     Definition boolean_feature : feature := {|
         dom := bool ;
-        testIndex := unit ;
-        tests := fun _ b => b 
+        testIndex := boolean_test ;
+        tests := fun 'bool_check b => b
     |}.
 
 End BooleanFeature.
@@ -51,16 +53,16 @@ End BooleanFeature.
 
 Section IntFeature.
 
-    Variant int_test := int_eq | int_le.
-
     (* Fot ints, we allow testing equality and inequality *)
+    Variant int_test := int_eq (a : Z.t) | int_le (a : Z.t).
+
     Definition int_feature : feature := {|
         dom := Z.t ;
-        testIndex := int_test * Z.t ;
-        tests := fun '(t, b) a =>
+        testIndex := int_test ;
+        tests := fun t a =>
             match t with
-            | int_eq => (a =? b)%Z
-            | int_le => (a <=? b)%Z
+            | int_eq b => (a =? b)%Z
+            | int_le b => (a <=? b)%Z
             end
     |}.
 
@@ -70,10 +72,15 @@ End IntFeature.
 Section FloatFeature.
 
     (* Every test for a float is a strict comparison to some threshold value *)
+    Variant float_test := float_lt (y : float).
+
     Definition float_feature : feature := {|
         dom := float ;
-        testIndex := float ;
-        tests := fun y x => (x <? y)%float
+        testIndex := float_test ;
+        tests := fun t x =>
+            match t with
+            | float_lt y => (x <? y)%float
+            end
     |}.
 
 End FloatFeature.
@@ -86,10 +93,15 @@ Section EnumFeature.
     (* Given a feature based on some enumeration of strings { s1, .., sn },
        there is a test for every subset of the enumeration: whether the
        feature value is a member of that subset *)
+    Variant enum_test (s : StringSet.t) := subset_mem (p : enum s -> bool).
+
     Definition enum_feature (s : StringSet.t) : feature := {|
         dom := enum s ;
-        testIndex := enum s -> bool ;
-        tests := fun p x => p x
+        testIndex := enum_test s ;
+        tests := fun t x =>
+            match t with
+            | subset_mem _ p => p x
+            end
     |}.
 
 End EnumFeature.

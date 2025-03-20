@@ -32,7 +32,7 @@ with type coq_class = string = struct
 
   let decision_tree =
     Node (2, Obj.repr (),
-      Node (0, Obj.repr (Coq_int_le, 24),
+      Node (0, Obj.repr (Coq_int_le 24),
         Leaf "No loan (age must be >= 25)",
         Node (1, Obj.repr 100000.0,
           Leaf "No loan (salary must be > 100 000)",

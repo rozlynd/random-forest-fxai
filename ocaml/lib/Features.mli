@@ -28,8 +28,8 @@ val testFeature :
 val boolean_feature : feature
 
 type int_test =
-| Coq_int_eq
-| Coq_int_le
+| Coq_int_eq of Z.t
+| Coq_int_le of Z.t
 
 val int_feature : feature
 
