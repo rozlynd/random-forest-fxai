@@ -1,6 +1,13 @@
 open Datatypes
 open Orders
 
+module MakeOrderTac :
+ functor (O:EqLtLe) ->
+ functor (P:sig
+ end) ->
+ sig
+ end
+
 module OT_to_OrderTac :
  functor (OT:OrderedType) ->
  sig

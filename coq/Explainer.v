@@ -1,15 +1,16 @@
 Require Extraction.
+Require Import String.
 From RFXP Require Import Features DT RF CNF Sat.
 
 Module Type InputDataSig.
 
-    Parameter class : Set.
+    Definition class := string.
 
     Parameter n_features : nat.
 
     Parameter features : featureList n_features.
 
-    Parameter decision_tree : decisionTree class features.
+    Parameter random_forest : randomForest features.
 
     Parameter instance : featureSpace features.
 
@@ -26,6 +27,6 @@ End MainSig.
 Module Main (Import D : InputDataSig) : MainSig D.
 
     Definition main (_ : unit) : class :=
-        evalDT class features decision_tree instance.
+        evalRF features random_forest instance.
 
 End Main.

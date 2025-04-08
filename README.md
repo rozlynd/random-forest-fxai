@@ -2,7 +2,7 @@
 
 This is a certified program producing explanations for the decisions of an AI using the Random Forest model.  Our definition of a correct explanation follows the work of Joao Marques-Silva around abductive and contrastive explanations—see [On Explaining Random Forests with SAT](https://arxiv.org/abs/2105.10278) and [Logic-Based Explainability: Past, Present & Future](https://arxiv.org/abs/2406.11873).  The algorithm is defined and proved correct in the Coq proof assistant, and then extracted to OCaml.
 
-This is a work in progress.  Currently the extracted program evaluates a decision tree defined in `ocaml/lib/Driver.ml`.
+This is a work in progress.  Currently the extracted program evaluates a random forest defined in `ocaml/lib/Driver.ml`.
 
 ### Compilation
 
