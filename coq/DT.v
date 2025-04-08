@@ -5,7 +5,7 @@ From RFXP Require Import Features.
 
 Section DecisionTrees.
 
-    Context (class : Set) {n : nat} (fs : featureList n).
+    Context (class : Type) {n : nat} (fs : featureList n).
 
     Inductive decisionTree : Type :=
     | Leaf (c : class)
