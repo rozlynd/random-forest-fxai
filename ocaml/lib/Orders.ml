@@ -18,6 +18,15 @@ module type OrderedType' =
   val eq_dec : t -> t -> bool
  end
 
+module type UsualOrderedType =
+ sig
+  type t
+
+  val compare : t -> t -> comparison
+
+  val eq_dec : t -> t -> bool
+ end
+
 module OT_to_Full =
  functor (O:OrderedType') ->
  struct

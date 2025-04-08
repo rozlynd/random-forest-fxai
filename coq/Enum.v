@@ -1,6 +1,6 @@
 Require Import String Orders MSets.
 
-Module StringOT : OrderedType with Definition t := string :=
+Module StringOT : UsualOrderedType with Definition t := string :=
     String_as_OT.
 
 Module StringSet : Sets with Module E := StringOT :=

@@ -4,7 +4,7 @@ open Orders
 open OrdersEx
 
 module StringOT :
- OrderedType with type t = string
+ UsualOrderedType with type t = string
 
 module StringSet :
  Sets with module E = StringOT
