@@ -26,7 +26,6 @@ Module Type VotingSig (OT : UsualOrderedType).
         count_occ (x :: l) y <= count_occ (x :: l) (vote x l).
 
     Axiom vote_count_max : forall (x : t) (l : list t) (y : t),
-        In y l ->
         count_occ (x :: l) y = count_occ (x :: l) (vote x l) ->
         le (vote x l) y.
 
@@ -43,7 +42,8 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
        for finite maps *)
     Module MOT_alt : OrderedType.MiniOrderedType
     with Definition t := OTF.t
-    with Definition eq := OTF.eq.
+    with Definition eq := OTF.eq
+    with Definition lt := OTF.lt.
         Definition t := OTF.t.
         Definition eq := OTF.eq.
         Definition lt := OTF.lt.
@@ -68,7 +68,8 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
 
     Module OT_alt : OrderedType.OrderedType
         with Definition t := OTF.t
-        with Definition eq := OTF.eq :=
+        with Definition eq := OTF.eq
+        with Definition lt := OTF.lt :=
         OrderedType.MOT_to_OT MOT_alt.
 
     Module TMap : FMapInterface.S with Module E := OT_alt := FMapList.Make OT_alt.
@@ -504,11 +505,11 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
         Qed.
 
 
-        Lemma findMax_in_map_ndefault :forall (m : map) (default k : t) (n : nat),
+        Lemma findMax_positive : forall (m : map) (default k : t) (n : nat),
             ~ Empty m ->
             map_positive m ->
             findMaxSpec m default k n ->
-            MapsTo k n m.
+            n > 0.
         Proof.
             intros m default k n Hnempty Hpos Hspec;
             induction Hspec as 
@@ -516,8 +517,7 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
                 | m m' default k k'' n n'' HAbove HAdd HnLe Hfind IH
                 | m m' default k k'' n n'' HAbove HAdd HnGt Hfind IH ];
                 try contradiction;
-            rewrite Add_spec_1; try apply HAdd;
-            assert (Hn''pos : n'' > 0);
+            assert (n'' > 0);
                 try (
                     apply Hpos with (k := k'');
                     rewrite Add_spec_1; try apply HAdd;
@@ -530,22 +530,97 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
                 try (
                     inversion Hfind; try lia;
                     eapply Add_nempty; eassumption
-                );
-            intros Hnempty';
-            specialize (IH Hnempty' Hpos);
-            apply add_2; try assumption;
-            cut (OT_alt.lt k k'');
-                try (now intros Hlt; symmetry; apply OT_alt.lt_not_eq);
-            apply HAbove; eexists; apply IH.
+                ).
         Qed.
 
+        Lemma findMax_in_map_ndefault : forall (m : map) (default k : t) (n : nat),
+            ~ Empty m ->
+            map_positive m ->
+            findMaxSpec m default k n ->
+            MapsTo k n m.
+        Proof.
+            intros m default k n Hnempty Hpos Hspec;
+            edestruct findMax_in_map as [ (_, Hn0) |]; [apply Hspec | | assumption];
+            apply findMax_positive in Hspec; try assumption; lia.
+        Qed.
 
         Lemma findMax_max_min_key : forall (m : map) (default k k' : t) (n : nat),
+            ~ Empty m ->
             map_positive m ->
             findMaxSpec m default k n ->
             MapsTo k' n m ->
             le k k'.
-        Admitted.
+        Proof.
+            intros m default k k' n Hnempty Hpos Hspec;
+            generalize dependent k';
+            assert (n > 0);
+                try (eapply findMax_positive; [| | apply Hspec]; assumption);
+            induction Hspec as
+                [ m default HEmpty
+                | m m' default k k'' n n'' HAbove HAdd HnLe Hfind IH
+                | m m' default k k'' n n'' HAbove HAdd HnGt Hfind IH ];
+                try contradiction;
+            intros k' HMapsTo;
+            rewrite Add_spec_1 in HMapsTo; try apply HAdd;
+            apply map_positive_Add_Above with (m := m) (k := k'') (n := n'') in Hpos;
+                try assumption;
+                try (now apply add_1);
+            destruct (eq_dec k' k'') as [ Heq | Hneq ];
+                try (now rewrite Heq; apply le_lteq; right).
+            -   rewrite Heq; apply le_lteq; left;
+                apply HAbove; eexists;
+                apply findMax_in_map in Hfind as [ Hl | Hr ]; try lia;
+                apply Hr.
+            -   apply add_3 in HMapsTo; try (now symmetry);
+                apply IH; try assumption;
+                intros abs; eapply abs, HMapsTo.
+            -   apply add_3 in HMapsTo; try (now symmetry);
+                cut (n >= n''); try lia;
+                eapply findMax_is_max with (k' := k'); [apply Hfind | assumption].
+        Qed.
+
+
+        Lemma find_max_in_map : forall (m : map) (default k : t) (n : nat),
+            find_max m default = (k, n) ->
+            (k = default /\ n = 0) \/ MapsTo k n m.
+        Proof.
+            intros m default k n H;
+            apply findMax_in_map, find_max_correct;
+            now rewrite H.
+        Qed.
+
+        Lemma find_max_in_map_ndefault : forall (m : map) (default k : t) (n : nat),
+            ~ Empty m ->
+            map_positive m ->
+            find_max m default = (k, n) ->
+            MapsTo k n m.
+        Proof.
+            intros m default k n H1 H2 H3;
+            eapply findMax_in_map_ndefault; try assumption; apply find_max_correct;
+            now rewrite H3.
+        Qed.
+
+        Lemma find_max_is_max : forall (m : map) (default k k' : t) (n n' : nat),
+            find_max m default = (k, n) ->
+            MapsTo k' n' m ->
+            n >= n'.
+        Proof.
+            intros m default k k' n n' H;
+            eapply findMax_is_max, find_max_correct;
+            now rewrite H.
+        Qed.
+
+        Lemma find_max_max_min_key : forall (m : map) (default k k' : t) (n : nat),
+            ~ Empty m ->
+            map_positive m ->
+            find_max m default = (k, n) ->
+            MapsTo k' n m ->
+            le k k'.
+        Proof.
+            intros m default k k' H1 H2 H3 H4;
+            eapply findMax_max_min_key; try assumption; apply find_max_correct;
+            now rewrite H4.
+        Qed.
 
     End FindMaximum.
 
@@ -565,6 +640,15 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
         now left.
     Qed.
 
+    Lemma count_all_occ_MapsTo (x y : t) (l : list t) :
+        List.In y (x :: l) ->
+        MapsTo y (count_occ (x :: l) y) (count_all_occ (x :: l) (empty _)).
+    Proof.
+        intros; apply find_2, count_all_occ_find_3;
+            try assumption;
+        apply empty_o.
+    Qed.
+
     Lemma count_all_occ_positive (x : t) (l : list t) :
         map_positive (count_all_occ (x :: l) (empty _)).
     Proof.
@@ -574,19 +658,18 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
         now intros (Hin, Heqn); rewrite Heqn; apply count_occ_In.
     Qed.
 
+
     Theorem vote_In : forall (x : t) (l : list t),
         List.In (vote x l) (x :: l).
     Proof.
         intros x l; unfold vote;
         remember (count_all_occ (x :: l) (empty nat)) as m;
         destruct (find_max m x) as (k, n) eqn:H;
-        assert (H' : findMaxSpec m x k n);
-            try (now apply find_max_correct; rewrite H);
-        apply findMax_in_map in H' as [ (H', _) | H' ];
+        apply find_max_in_map in H as [|];
             try (now left);
         apply count_all_occ_In_5 with (acc := empty nat);
             try (now rewrite empty_in_iff);
-        rewrite <- Heqm; eexists; apply H'.
+        rewrite <- Heqm; eexists; eauto.
     Qed.
 
 
@@ -598,14 +681,12 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
         unfold vote, count_occ in *;
         remember (count_all_occ (x :: l) (empty nat)) as m;
         destruct (find_max m x) as (k, n) eqn:H;
-        assert (H' : findMaxSpec m x k n);
-            try (now apply find_max_correct; rewrite H);
         destruct (in_dec eq_dec y (x :: l)) as [ Hin | Hnin ];
             try (
                 rewrite count_occ_not_In in Hnin;
                 rewrite Hnin; lia
             );
-        apply findMax_is_max with (m := m) (k := k) (k' := y) (default := x);
+        apply find_max_is_max with (m := m) (k := k) (k' := y) (default := x);
             try (
                 rewrite Heqm; apply find_2, count_all_occ_find_3;
                     try assumption;
@@ -613,20 +694,43 @@ Module Voting (OT : UsualOrderedType) : VotingSig OT.
             );
         replace (List.count_occ OTF.eq_dec (x :: l) k) with n;
             try assumption;
-        apply findMax_in_map_ndefault in H';
+        apply find_max_in_map_ndefault in H;
             try (rewrite Heqm; apply count_all_occ_nempty);
             try (rewrite Heqm; apply count_all_occ_positive);
         edestruct count_all_occ_find_5;
             [ apply empty_o
-            | rewrite <- Heqm; apply find_1, H'
+            | rewrite <- Heqm; apply find_1, H
             | assumption ].
     Qed.
 
 
     Theorem vote_count_max : forall (x : t) (l : list t) (y : t),
-        List.In y l ->
         count_occ (x :: l) y = count_occ (x :: l) (vote x l) ->
         le (vote x l) y.
-    Admitted.
+    Proof.
+        intros x l y Hcount;
+        assert (Hyin : List.In y (x :: l));
+            try (
+                cut (count_occ (x :: l) y > 0); [apply count_occ_In |];
+                rewrite Hcount; apply count_occ_In, vote_In
+            );
+        apply count_all_occ_MapsTo in Hyin;
+        unfold vote, count_occ in *;
+        remember (count_all_occ (x :: l) (empty nat)) as m eqn:Heqm;
+        destruct (find_max m x) as (k, n) eqn:H;
+        apply find_max_max_min_key with (m := m) (default := x) (n := n);
+            try (rewrite Heqm; apply count_all_occ_nempty);
+            try (rewrite Heqm; apply count_all_occ_positive);
+            try apply H;
+        apply find_max_in_map_ndefault in H;
+            try (rewrite Heqm; apply count_all_occ_nempty);
+            try (rewrite Heqm; apply count_all_occ_positive);
+        replace n with (List.count_occ OTF.eq_dec (x :: l) k);
+            try (now rewrite <- Hcount);
+        eapply MapsTo_fun; [| apply H]; rewrite Heqm;
+        apply count_all_occ_MapsTo, count_all_occ_In_5 with (acc := empty _);
+            try (now rewrite empty_in_iff);
+        eexists; rewrite <- Heqm; apply H.
+    Qed.
 
 End Voting.
