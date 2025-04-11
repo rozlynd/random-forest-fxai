@@ -9,11 +9,7 @@ Import ListNotations.
 
 (* OrderedType restricted to Usual because count_occ needs the usual
    equality to be decidable *)
-Module Type VotingSig (OT : UsualOrderedType).
-
-    Module OTF : UsualOrderedTypeFull
-        with Definition t := OT.t := OT_to_Full OT.
-    Import OTF.
+Module Type VotingSig (Import OTF : UsualOrderedTypeFull).
 
     Parameter vote : t -> list t -> t.
 
@@ -32,11 +28,7 @@ Module Type VotingSig (OT : UsualOrderedType).
 End VotingSig.
 
 
-Module Voting (OT : UsualOrderedType) : VotingSig OT.
-
-    Module OTF : UsualOrderedTypeFull
-        with Definition t := OT.t := OT_to_Full OT.
-    Import OTF.
+Module Voting (Import OTF : UsualOrderedTypeFull) : VotingSig OTF.
 
     (* The standard library uses another implementation of OrderedType
        for finite maps *)

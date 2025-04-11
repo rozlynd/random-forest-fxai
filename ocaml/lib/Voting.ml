@@ -8,10 +8,8 @@ type __ = Obj.t
 let __ = let rec f _ = Obj.repr f in Obj.repr f
 
 module Voting =
- functor (OT:Orders.UsualOrderedType) ->
+ functor (OTF:Orders.UsualOrderedTypeFull) ->
  struct
-  module OTF = Orders.OT_to_Full(OT)
-
   module MOT_alt =
    struct
     type t = OTF.t

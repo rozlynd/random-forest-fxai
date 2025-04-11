@@ -3,6 +3,9 @@ Require Import String Orders MSets.
 Module StringOT : UsualOrderedType with Definition t := string :=
     String_as_OT.
 
+Module StringOTF : UsualOrderedTypeFull with Definition t := string :=
+    OT_to_Full StringOT.
+
 Module StringSet : Sets with Module E := StringOT :=
     MSetList.Make StringOT.
 

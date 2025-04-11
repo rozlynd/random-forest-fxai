@@ -2,9 +2,8 @@ open DT
 open Enum
 open Features
 open List0
-open Orders
 
-module StringVoting = Voting.Voting(StringOT)
+module StringVoting = Voting.Voting(StringOTF)
 
 type 'a nelist =
 | Coq_necons of 'a * 'a list

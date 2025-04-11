@@ -5,7 +5,7 @@ Require Import String.
 From RFXP Require Import Features DT Enum Voting.
 
 
-Module StringVoting : VotingSig StringOT := Voting StringOT.
+Module StringVoting : VotingSig StringOTF := Voting StringOTF.
 
 
 Section NonEmptyList.
