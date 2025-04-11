@@ -13,7 +13,7 @@ Module Type VotingSig (Import OTF : UsualOrderedTypeFull).
 
     Parameter vote : t -> list t -> t.
 
-    Local Definition count_occ := count_occ eq_dec.
+    Definition count_occ := count_occ eq_dec.
 
     Axiom vote_In : forall (x : t) (l : list t),
         In (vote x l) (x :: l).
@@ -67,7 +67,7 @@ Module Voting (Import OTF : UsualOrderedTypeFull) : VotingSig OTF.
     Module TMap : FMapInterface.S with Module E := OT_alt := FMapList.Make OT_alt.
     Module TMapFacts := FMapFacts.OrdProperties TMap.
 
-    Local Definition count_occ := count_occ eq_dec.
+    Definition count_occ := count_occ eq_dec.
 
     Import TMap TMapFacts TMapFacts.P TMapFacts.P.F.
 
