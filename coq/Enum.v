@@ -1,22 +1,6 @@
-Require Import String Orders MSets.
+Require Import String.
+From RFXP Require Import Utils.
 
-Module StringOT : UsualOrderedType with Definition t := string :=
-    String_as_OT.
+Import StringSet.
 
-Module StringOTF : UsualOrderedTypeFull with Definition t := string :=
-    OT_to_Full StringOT.
-
-Module StringSet : Sets with Module E := StringOT :=
-    MSetList.Make StringOT.
-
-Module StringSetProperties := OrdProperties StringSet.
-Export StringSetProperties.P.
-
-
-Section EnumDefinition.
-
-    Import StringSet.
-
-    Definition enum (s : StringSet.t) := { x : string | In x s }.
-
-End EnumDefinition.
+Definition enum (s : StringSet.t) := { x : string | In x s }.

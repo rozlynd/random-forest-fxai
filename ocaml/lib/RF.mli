@@ -1,7 +1,7 @@
 open DT
-open Enum
 open Features
 open List0
+open Utils
 
 module StringVoting :
  sig
@@ -9,9 +9,6 @@ module StringVoting :
 
   val count_occ : string list -> string -> int
  end
-
-type 'a nelist =
-| Coq_necons of 'a * 'a list
 
 type coq_class = string
 

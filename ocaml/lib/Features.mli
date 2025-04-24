@@ -1,6 +1,6 @@
 open BinInt
-open Enum
 open PrimFloat
+open Utils
 
 type __ = Obj.t
 

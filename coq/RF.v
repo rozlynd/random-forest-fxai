@@ -2,23 +2,10 @@ Require Import List.
 Import ListNotations.
 
 Require Import String.
-From RFXP Require Import Features DT Enum Voting.
+From RFXP Require Import Utils Features DT Enum Voting.
 
 
 Module StringVoting : VotingSig StringOTF := Voting StringOTF.
-
-
-Section NonEmptyList.
-
-    Variable (A : Type).
-
-    Inductive nelist :=
-    | necons (x : A) (l : list A).
-
-End NonEmptyList.
-
-Arguments necons {A}.
-
 
 Section RandomForests.
 

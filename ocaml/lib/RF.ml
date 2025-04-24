@@ -1,12 +1,9 @@
 open DT
-open Enum
 open Features
 open List0
+open Utils
 
 module StringVoting = Voting.Voting(StringOTF)
-
-type 'a nelist =
-| Coq_necons of 'a * 'a list
 
 type coq_class = string
 
