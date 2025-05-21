@@ -7,6 +7,7 @@
 ./RF.v
 ./CNF.v
 ./Sat.v
-./Encoding.v
+./EncodingCategorical.v
+./EncodingSat.v
 ./Explainer.v
 ./Extract.v
