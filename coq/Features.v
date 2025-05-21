@@ -105,3 +105,31 @@ Section EnumFeature.
     |}.
 
 End EnumFeature.
+
+
+(* We are only interested in two kinds of features: continuous and categorical.
+   The only continuous feature we consider is float.  The only categorical
+   features we consider are enumerations of strings. *)
+
+Section FeaturesSpecial.
+
+    Inductive allFeatures {n : nat} (P : feature -> Prop) : featureList n -> Prop :=
+    | all_features (fs : featureList n) :
+        (forall i, P (fs i)) -> allFeatures P fs.
+
+    (* The sets that characterize our categorical features *)
+    Context (ss : list StringSet.t).
+
+    Inductive isEnum : feature -> Prop :=
+    | is_enum' (s : StringSet.t) : In s ss -> isEnum (enum_feature s).
+
+    Inductive isEnumOrFloat : feature -> Prop :=
+    | is_enum (f : feature) : isEnum f -> isEnumOrFloat f
+    | is_float : isEnumOrFloat float_feature.
+
+    Context {n : nat} (fs : featureList n).
+
+    Definition enum_list := allFeatures isEnum fs.
+    Definition enum_float_list := allFeatures isEnumOrFloat fs.
+
+End FeaturesSpecial.
