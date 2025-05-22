@@ -15,7 +15,7 @@ Module StringSet : Sets
     MSetList.Make StringOT.
 
 Module StringSetProperties := OrdProperties StringSet.
-Export StringSetProperties.P.
+Export StringSetProperties StringSetProperties.P.
 
 
 (* Non-empty lists *)
