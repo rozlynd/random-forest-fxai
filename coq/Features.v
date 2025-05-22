@@ -113,19 +113,21 @@ End EnumFeature.
 
 Section FeaturesSpecial.
 
-    Inductive allFeatures {n : nat} (P : feature -> Prop) : featureList n -> Prop :=
-    | all_features (fs : featureList n) :
+    Inductive allFeatures {n : nat} (P : feature -> Type) (fs : featureList n) : Type :=
+    | all_features :
         (forall i, P (fs i)) -> allFeatures P fs.
+
+    Inductive isFloat : feature -> Prop :=
+    | is_float : isFloat float_feature.
 
     (* The sets that characterize our categorical features *)
     Context (ss : list StringSet.t).
 
     Inductive isEnum : feature -> Prop :=
-    | is_enum' (s : StringSet.t) : In s ss -> isEnum (enum_feature s).
+    | is_enum (s : StringSet.t) : In s ss -> isEnum (enum_feature s).
 
-    Inductive isEnumOrFloat : feature -> Prop :=
-    | is_enum (f : feature) : isEnum f -> isEnumOrFloat f
-    | is_float : isEnumOrFloat float_feature.
+    Definition isEnumOrFloat (f : feature) : Type :=
+        { isEnum f } + { isFloat f }.
 
     Context {n : nat} (fs : featureList n).
 
