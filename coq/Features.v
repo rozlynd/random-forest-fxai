@@ -72,14 +72,14 @@ End IntFeature.
 Section FloatFeature.
 
     (* Every test for a float is a strict comparison to some threshold value *)
-    Variant float_test := float_lt (y : float).
+    Variant float_test := float_lt (y : float_std).
 
     Definition float_feature : feature := {|
-        dom := float ;
+        dom := float_std ;
         testIndex := float_test ;
-        tests := fun t x =>
+        tests := fun t '(exist _ x _) =>
             match t with
-            | float_lt y => (x <? y)%float
+            | float_lt (exist _ y _) => (x <? y)%float
             end
     |}.
 

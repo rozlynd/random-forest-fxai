@@ -46,8 +46,8 @@ let int_feature t0 a =
 
 (** val float_feature : feature **)
 
-let float_feature t0 x =
-  ltb (Obj.magic x) (Obj.magic t0)
+let float_feature t0 pat =
+  ltb (Obj.magic pat) (Obj.magic t0)
 
 (** val enum_feature : StringSet.t -> feature **)
 
