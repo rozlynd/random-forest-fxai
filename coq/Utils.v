@@ -1,4 +1,5 @@
-Require Import String Orders MSets Floats PrimFloat ZArith.
+Require Import List String Orders MSets Floats PrimFloat ZArith Arith.
+Import ListNotations Lia.
 
 (* String utils *)
 
@@ -300,6 +301,74 @@ Module FloatSet : Sets
 
 Module FloatSetProperties := OrdProperties FloatSet.
 Export FloatSetProperties FloatSetProperties.P.
+
+
+(* List utils *)
+
+Section ListInit.
+
+    Context {A : Type} (f : nat -> A).
+
+    Fixpoint init_aux (n : nat) (acc : list A) : list A :=
+        match n with
+        | 0 => acc
+        | S n' => init_aux n' (f n' :: acc)
+        end.
+
+    Definition init (n : nat) :=
+        init_aux n [].
+
+    Lemma init_aux_length : forall (n : nat) (acc : list A),
+        length (init_aux n acc) = n + length acc.
+    Proof.
+        induction n as [| n' IH ]; intros; simpl;
+            try reflexivity;
+        rewrite IH; simpl; lia.
+    Qed.
+
+    Theorem init_length : forall (n : nat),
+        length (init n) = n.
+    Proof. now intros; unfold init; rewrite init_aux_length. Qed.
+
+    Theorem init_0 :
+        init 0 = [].
+    Proof. reflexivity. Qed.
+
+    Lemma init_aux_acc : forall (n : nat) (acc : list A),
+        init_aux n acc = init_aux n [] ++ acc.
+    Proof.
+        induction n as [| n' IH ]; intros; simpl;
+            try reflexivity;
+        now rewrite IH, IH with (acc := [ f n' ]), <- app_assoc.
+    Qed.
+
+    Theorem init_S : forall (n : nat),
+        init (S n) = init n ++ [ f n ].
+    Proof.
+        unfold init; induction n as [| n' IH ]; intros;
+            try reflexivity;
+        rewrite IH, <- app_assoc; simpl;
+        now rewrite init_aux_acc.
+    Qed.
+
+    Theorem init_nth_error_None : forall (n i : nat),
+        n <= i ->
+        nth_error (init n) i = None.
+    Proof. now intros; rewrite nth_error_None, init_length. Qed.
+
+    Theorem init_nth_error_Some : forall (n i : nat),
+        i < n ->
+        nth_error (init n) i = Some (f i).
+    Proof.
+        induction n as [| n' IH ]; intros i H; inversion H;
+        rewrite init_S.
+        -   rewrite nth_error_app2, init_length, Nat.sub_diag;
+            now rewrite ? init_length.
+        -   rewrite nth_error_app1, IH;
+            now rewrite ? init_length.
+    Qed.
+
+End ListInit.
 
 
 (* Non-empty lists *)
