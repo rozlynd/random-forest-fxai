@@ -19,6 +19,15 @@ Module StringSetProperties := OrdProperties StringSet.
 Export StringSetProperties StringSetProperties.P.
 
 
+Section StringEnumerations.
+
+    Import StringSet.
+
+    Definition enum (s : StringSet.t) : Type := { x : string | In x s }.
+
+End StringEnumerations.
+
+
 (* Float utils *)
 
 Definition float_std := { x : float | is_nan x = false }.

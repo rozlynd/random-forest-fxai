@@ -2,7 +2,7 @@ Require Import List.
 Import ListNotations.
 
 Require Import String.
-From RFXP Require Import Utils Features DT Enum Voting.
+From RFXP Require Import Utils Features DT Voting.
 
 
 Module StringVoting : VotingSig StringOTF := Voting StringOTF.

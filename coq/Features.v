@@ -1,6 +1,6 @@
 Require Import List ZArith PrimFloat.
 
-From RFXP Require Import Utils Enum.
+From RFXP Require Import Utils.
 
 Section FeaturesGeneral.
 

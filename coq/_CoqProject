@@ -1,7 +1,6 @@
 -Q . RFXP
 ./Utils.v
 ./Features.v
-./Enum.v
 ./Voting.v
 ./DT.v
 ./RF.v
