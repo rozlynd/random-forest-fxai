@@ -1,4 +1,5 @@
 Require Import List String Orders MSets Floats PrimFloat ZArith Arith.
+Require Import Coq.Program.Equality.
 Import ListNotations Lia.
 
 (* String utils *)
@@ -17,6 +18,9 @@ Module StringSet : Sets
 
 Module StringSetProperties := OrdProperties StringSet.
 Export StringSetProperties StringSetProperties.P.
+
+Module StringSetMoreProperties := MSets.MSetFacts.WFactsOn StringOT StringSet.
+Export StringSetMoreProperties.
 
 
 Section StringEnumerations.

@@ -7,11 +7,11 @@ module type InputDataSig =
 
   val n_features : int
 
-  val features : featureList
+  val features : featureSig
 
   val random_forest : randomForest
 
-  val instance : featureSpace
+  val instance : featureVec
  end
 
 module Main =

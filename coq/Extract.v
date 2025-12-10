@@ -8,4 +8,4 @@ Set Extraction Output Directory "../ocaml/lib".
 Extraction Blacklist List String.
 
 Extraction Language OCaml.
-Separate Extraction Main boolean_feature int_feature float_feature enum_feature.
+Separate Extraction Main boolean_feature float_feature enum_feature.

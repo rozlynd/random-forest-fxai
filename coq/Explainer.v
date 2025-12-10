@@ -8,11 +8,11 @@ Module Type InputDataSig.
 
     Parameter n_features : nat.
 
-    Parameter features : featureList n_features.
+    Parameter features : featureSig n_features.
 
     Parameter random_forest : randomForest features.
 
-    Parameter instance : featureSpace features.
+    Parameter instance : featureVec features.
 
 End InputDataSig.
 

@@ -11,11 +11,11 @@ Section RandomForests.
 
     Definition class := string.
 
-    Context {n : nat} (fs : featureList n).
+    Context {n : nat} (fs : featureSig n).
 
     Definition randomForest := nelist (decisionTree class fs).
 
-    Definition evalRF (rf : randomForest) (x : featureSpace fs) : class :=
+    Definition evalRF (rf : randomForest) (x : featureVec fs) : class :=
         match rf with
         | necons dt dts =>
             StringVoting.vote (evalDT class fs dt x) (map (fun dt => evalDT class fs dt x) dts)

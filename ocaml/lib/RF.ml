@@ -10,7 +10,7 @@ type coq_class = string
 type randomForest = coq_class decisionTree nelist
 
 (** val evalRF :
-    int -> featureList -> randomForest -> featureSpace -> coq_class **)
+    int -> featureSig -> randomForest -> featureVec -> coq_class **)
 
 let evalRF n fs rf x =
   let Coq_necons (dt, dts) = rf in

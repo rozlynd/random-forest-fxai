@@ -6,7 +6,7 @@ This is a work in progress.  Currently the extracted program evaluates a random 
 
 ### Compilation
 
-The project has been tested with Coq 8.20 and Dune 3.16.  The Dune project is set up in the subdirectory `ocaml/`.  You can run the commands `dune build` and `dune exec rfxp` from that subdirectory.
+The project has been tested with Coq 8.20 and Dune 3.19.  The Dune project is set up in the subdirectory `ocaml/`.  You can run the commands `dune build` and `dune exec rfxp` from that subdirectory.
 
 You will likely have to link the Dune project with Coq's kernel, as the extraction to OCaml's primitive `float` type requires it.  Look for the directory `coq-core/` in your installation and check that it contains a `dune` or `dune-package` file.  The easiest way to link this to the project is to set up a symbolic link:
 ```bash

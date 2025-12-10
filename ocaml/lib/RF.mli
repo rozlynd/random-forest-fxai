@@ -14,4 +14,4 @@ type coq_class = string
 
 type randomForest = coq_class decisionTree nelist
 
-val evalRF : int -> featureList -> randomForest -> featureSpace -> coq_class
+val evalRF : int -> featureSig -> randomForest -> featureVec -> coq_class

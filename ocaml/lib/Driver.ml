@@ -11,18 +11,12 @@ with type coq_class = string = struct
 
   let n_features = 4
 
-  let features = (fun n -> begin
-    if n = 0 then
-      boolean_feature (* blocked-arteries *)
-    else if n = 1 then
-      boolean_feature (* good-blood-circulation *)
-    else if n = 2 then
-      boolean_feature (* chest-pain *)
-    else if n = 3 then
-      float_feature (* weight *)
-    else
-      failwith "error"
-  end)
+  let features =
+    Coq_featureSigCons (3, boolean_feature, Coq_isBooleanFeature,   (* blocked-arteries *)
+    Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,   (* good-blood-circulation *)
+    Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,   (* chest-pain *)
+    Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,  (* weight *)
+    Coq_featureSigNil))))
 
   let decision_tree_1 =
     Node (0, Obj.repr (),
@@ -48,13 +42,23 @@ with type coq_class = string = struct
         Leaf "No"))
 
   let random_forest =
-    Coq_necons (decision_tree_1, [ decision_tree_2 ; decision_tree_3 ])
+    Utils.Coq_necons (decision_tree_1, [ decision_tree_2 ; decision_tree_3 ])
 
-  let instance = (fun n -> List.nth [
-    Obj.repr true ;
-    Obj.repr false ;
-    Obj.repr true ;
-    Obj.repr 70.0
-  ] n)
+  let instance =
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 3,
+      (Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
+      (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
+      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+      Coq_featureSigNil)))))),
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr false, 2,
+      (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
+      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+      Coq_featureSigNil)))),
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 1,
+      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+      Coq_featureSigNil)),
+    Coq_featureVecCons (float_feature, Coq_isContinuousFeature, Obj.repr 70.0, 0,
+      Coq_featureSigNil,
+    Coq_featureVecNil))))
 
 end
