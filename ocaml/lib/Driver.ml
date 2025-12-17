@@ -18,26 +18,32 @@ with type coq_class = string = struct
     Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,  (* weight *)
     Coq_featureSigNil))))
 
+  let rec to_fin' m n =
+    if n == 0 then F1 m
+    else FS (m, (to_fin' m (n-1)))
+
+  let to_fin = to_fin' n_features
+
   let decision_tree_1 =
-    Node (0, Obj.repr (),
-      Node (2, Obj.repr (),
+    Node (to_fin 0, Obj.repr (),
+      Node (to_fin 2, Obj.repr (),
         Leaf "Yes",
         Leaf "No"),
       Leaf "No")
 
   let decision_tree_2 =
-    Node (1, Obj.repr (),
+    Node (to_fin 1, Obj.repr (),
       Leaf "No",
-      Node (3, Obj.repr 75.0,
+      Node (to_fin 3, Obj.repr 75.0,
         Leaf "No",
         Leaf "Yes"))
 
   let decision_tree_3 =
-    Node (1, Obj.repr (),
-      Node (0, Obj.repr (),
+    Node (to_fin 1, Obj.repr (),
+      Node (to_fin 0, Obj.repr (),
         Leaf "Yes",
         Leaf "No"),
-      Node (2, Obj.repr (),
+      Node (to_fin 2, Obj.repr (),
         Leaf "Yes",
         Leaf "No"))
 

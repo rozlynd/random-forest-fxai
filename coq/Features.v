@@ -1,4 +1,5 @@
 Require Import List ZArith PrimFloat.
+Require Import Coq.Program.Equality Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 
 From RFXP Require Import Utils.
@@ -76,86 +77,140 @@ Section Features.
 
     Inductive featureVec : forall {n : nat}, featureSig n -> Type :=
     | featureVecNil : featureVec featureSigNil
-    | featureVecCons {f : feature} (get : getFeatureKind f) (x : dom f)
+    | featureVecCons (f : feature) (get : getFeatureKind f) (x : dom f)
                      {n : nat} {fs : featureSig n} (vs : featureVec fs) :
                         featureVec (featureSigCons f get fs).
+
+    Inductive fin : nat -> Type :=
+    | F1 {n : nat} : fin (S n)
+    | FS {n : nat} : fin n -> fin (S n).
 
 
     Definition feature_wrap : Type := { f : feature & getFeatureKind f }.
     Definition float_feature_wrap : feature_wrap := existT _ float_feature isContinuousFeature.
+    Definition boolean_feature_wrap : feature_wrap := existT _ boolean_feature isBooleanFeature.
     Definition enum_feature_wrap (s : StringSet.t) : feature_wrap := existT _ (enum_feature s) (isCategoricalFeature s).
 
 
-    Program Fixpoint getFeature {n : nat} (fs : featureSig n) (i : nat) :
-            feature_wrap + { n <= i } :=
-        match fs with
-        | featureSigNil => inright _
-        | featureSigCons f get fs =>
-            match i with
-            | 0 => inleft (existT _ f get)
-            | S i =>
-                match getFeature fs i with
-                | inleft r => inleft r
-                | inright _ => inright _
-                end
+    Fixpoint getFeatureWrap {n : nat} (fs : featureSig n) {struct fs} : fin n -> feature_wrap :=
+        match fs in featureSig n return fin n -> feature_wrap with
+        | featureSigNil => fun i =>
+            match i in fin 0 with
             end
+        | featureSigCons f get fs => fun i =>
+            match i in fin (S p) return (fin p -> feature_wrap) -> feature_wrap with
+            | F1 => fun _ => existT _ f get
+            | FS i => fun k => k i
+            end (getFeatureWrap fs)
         end.
-    Solve All Obligations with Lia.lia.
 
-    Program Definition getFeatureWrapSane {n : nat} (fs : featureSig n) (i : nat) (p : i < n) :
-            feature_wrap :=
-        match getFeature fs i with
-        | inleft r => r
-        | inright _ => _
-        end.
-    Solve All Obligations with Lia.lia.
+    Definition getFeature {n : nat} (fs : featureSig n) (i : fin n) : feature :=
+        projT1 (getFeatureWrap fs i).
 
-    Definition getFeatureSane {n : nat} (fs : featureSig n) (i : nat) (p : i < n) :
-            feature :=
-        projT1 (getFeatureWrapSane fs i p).
+    Lemma getFeatureF1 {n : nat} (f : feature) (get : getFeatureKind f) (fs : featureSig n) :
+        getFeature (featureSigCons f get fs) F1 = f.
+    Proof. reflexivity. Qed.
+
+    Lemma getFeatureFS {n : nat} (f : feature) (get : getFeatureKind f) (fs : featureSig n) (i : fin n) :
+        getFeature (featureSigCons f get fs) (FS i) = getFeature fs i.
+    Proof. reflexivity. Qed.
 
 
-    Program Fixpoint getVector {n : nat} {fs : featureSig n}
-                               (vs : featureVec fs) (i : nat) :
-            { f : feature_wrap & dom (projT1 f) & getFeature fs i = inleft f } + { n <= i } :=
-        match vs with
-        | featureVecNil => inright _
-        | @featureVecCons f get x _ _ vs =>
-            match i with
-            | 0 => inleft (existT2 _ _ (existT _ f get) x _)
-            | S i =>
-                match getVector vs i with
-                | inleft (existT2 _ _ f _ _) => inleft (existT2 _ _ f _ _)
-                | inright _ => inright _
-                end
+    Fixpoint getValueS {n : nat} {fs : featureSig n}
+                       (vs : featureVec fs) : forall (i : fin n), { f : feature & dom f } :=
+        match vs in @featureVec n fs return forall (i : fin n), { f : feature & dom f } with
+        | featureVecNil => fun i =>
+            match i in fin 0 with
             end
-        end.
-    Obligation 4 of getVector. destruct (getFeature wildcard'2 i); now inversion X0. Defined.
-    Solve Obligations with Lia.lia.
-
-    (* drop the identity proof returned by getVector *)
-    Definition getVectorValue {n : nat} {fs : featureSig n}
-                              (vs : featureVec fs) (i : nat) :
-            { f : feature_wrap & dom (projT1 f) } + { n <= i } :=
-        match getVector vs i with
-        | inleft (existT2 _ _ f x _) => inleft (existT _ f x)
-        | inright p => inright p
+        | featureVecCons f get x vs => fun i =>
+            match i in fin (S p)
+                return (forall (i : fin p), { f : feature & dom f })
+                    -> { f : feature & dom f }
+            with
+            | F1 => fun _ => existT _ f x
+            | FS i => fun k => k i
+            end (getValueS vs)
         end.
 
-    Definition getVectorValueSane {n : nat} {fs : featureSig n}
-                                  (vs : featureVec fs) (i : nat) (p : i < n) :
-            dom (getFeatureSane fs i p).
+    Lemma getValueSF1 {n : nat} {fs : featureSig n}
+                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) :
+        getValueS (featureVecCons f get x vs) F1 = existT _ f x.
+    Proof. reflexivity. Qed.
+
+    Lemma getValueSFS {n : nat} {fs : featureSig n}
+                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) (i : fin n) :
+        getValueS (featureVecCons f get x vs) (FS i) = getValueS vs i.
+    Proof. reflexivity. Qed.
+
+
+    Definition getValue {n : nat} {fs : featureSig n} (vs : featureVec fs) (i : fin n) :
+            dom (projT1 (getValueS vs i)) :=
+        projT2 (getValueS vs i).
+
+    Lemma getValueF1 {n : nat} {fs : featureSig n}
+                     (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) :
+        getValue (featureVecCons f get x vs) F1 = x.
+    Proof. reflexivity. Qed.
+
+    Lemma getValueFS {n : nat} {fs : featureSig n}
+                     (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) (i : fin n) :
+        getValue (featureVecCons f get x vs) (FS i) = getValue vs i.
+    Proof. reflexivity. Qed.
+
+    
+    Definition featureTest {n : nat} {fs : featureSig n}
+                           (vs : featureVec fs) (i : fin n)
+                           (t : testIndex (projT1 (getValueS vs i))) : bool :=
+        tests _ t (getValue vs i).
+
+
+    (* We define below variants getValue' and featureTest' whose types are based on
+       getFeature instead of getValueS. This is achieved by using equalities between
+       types, which looks pretty advanced. I use proof irrelevance to solve some lemmas;
+       I have not found a better solution. *)
+
+    Lemma getValueS_Domain {n : nat} (fs : featureSig n) (vs : featureVec fs) (i : fin n) :
+        projT1 (getValueS vs i) = getFeature fs i.
     Proof.
-        destruct (getVector vs i) as [((f, get), x, E) |]; [| Lia.lia].
-        unfold getFeatureSane, getFeatureWrapSane; rewrite E.
-        exact x.
+        induction vs as [| f get x n fs vs IH ]; try (now inversion i);
+        dependent destruction i.
+        -   now rewrite getValueSF1, getFeatureF1.
+        -   now rewrite getValueSFS, getFeatureFS, IH.
+    Qed.
+
+    Definition getValue' {n : nat} {fs : featureSig n} (vs : featureVec fs) (i : fin n) :
+        dom (getFeature fs i).
+    Proof.
+        rewrite <- getValueS_Domain with (vs := vs).
+        exact (projT2 (getValueS vs i)).
     Defined.
 
+    Lemma getValueF1' {n : nat} {fs : featureSig n}
+                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) :
+        getValue' (featureVecCons f get x vs) F1 = x.
+    Proof.
+        unfold getValue';
+        remember (getValueS_Domain (featureSigCons f get fs) (featureVecCons f get x vs) F1) as E;
+        now rewrite <- Eqdep.Eq_rect_eq.eq_rect_eq with (h := E).
+    Qed.
 
-    Definition featureTest {n : nat} {fs : featureSig n}
-                           (vs : featureVec fs) (i : nat) (p : i < n)
-                           (t : testIndex (getFeatureSane fs i p)) : bool :=
-        tests _ t (getVectorValueSane vs i p).
+    Lemma getValueFS' {n : nat} {fs : featureSig n}
+                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) (i : fin n) :
+        getValue' (featureVecCons f get x vs) (FS i) = getValue' vs i.
+    Proof.
+        unfold getValue';
+        remember (getValueS_Domain fs vs i) as E;
+        remember (getValueS_Domain (featureSigCons f get fs) (featureVecCons f get x vs) (FS i)) as E';
+        replace E' with E; now try apply proof_irrelevance.
+    Qed.
+
+
+    Definition featureTest' {n : nat} {fs : featureSig n}
+                            (vs : featureVec fs) (i : fin n)
+                            (t : testIndex (getFeature fs i)) : bool :=
+        tests _ t (getValue' vs i).
+
+    Global Arguments featureVecCons {f} get x {n fs} vs.
 
 End Features.
 
@@ -187,58 +242,82 @@ Section Examples.
     Solve All Obligations with check_mem_string.
 
 
-    Proposition check1 :
-        exists r,
-            getVectorValue v 0 = inleft r /\
-            match r with
-            | existT _ (existT _ f isContinuousFeature) x => proj1_sig x = 0.5
-            | _ => False
-            end.
-    Proof. eexists; split; reflexivity. Qed.
-
-    Proposition check2 :
-        exists r,
-            getVectorValue v 1 = inleft r /\
-            match r with
-            | existT _ (existT _ f (isCategoricalFeature s1)) x => proj1_sig x = "red"
-            | _ => False
-            end.
-    Proof. eexists; split; reflexivity. Qed.
-
-    Proposition check3 :
-        exists r,
-            getVectorValue v 2 = inleft r /\
-            match r with
-            | existT _ (existT _ f (isCategoricalFeature s2)) x => proj1_sig x = "no"
-            | _ => False
-            end.
-    Proof. eexists; split; reflexivity. Qed.
-
-    Proposition check1' :
-        forall (p : 0 < 3), proj1_sig (getVectorValueSane v 0 p) = 0.5.
+    Proposition check1_dom :
+        getFeature fs F1 = float_feature.
     Proof. reflexivity. Qed.
 
-    Proposition check2' :
-        forall (p : 1 < 3), proj1_sig (getVectorValueSane v 1 p) = "red".
+    Proposition check2_dom :
+        getFeature fs (FS F1) = enum_feature s1.
     Proof. reflexivity. Qed.
 
-    Proposition check3' :
-        forall (p : 2 < 3), proj1_sig (getVectorValueSane v 2 p) = "no".
+    Proposition check3_dom :
+        getFeature fs (FS (FS F1)) = enum_feature s2.
     Proof. reflexivity. Qed.
+
+
+    Proposition check1_val :
+        proj1_sig (getValue v F1) = 0.5.
+    Proof. reflexivity. Qed.
+
+    Proposition check2_val :
+        proj1_sig (getValue v (FS F1)) = "red".
+    Proof. reflexivity. Qed.
+
+    Proposition check3_val :
+        proj1_sig (getValue v (FS (FS F1))) = "no".
+    Proof. reflexivity. Qed.
+
+
+    Definition is_lt_075 : float_test.
+    Proof. refine (float_lt (exist _ 0.75 _)); reflexivity. Defined.
+
+    Definition is_yellow : enum_test s1 :=
+        subset_mem s1 (fun '(exist _ s _) => eqb s "yellow").
+    Definition is_no : enum_test s2 :=
+        subset_mem s2 (fun '(exist _ s _) => eqb s "no").
 
     Proposition check_test1 :
-        forall (p : 0 < 3) (q : is_nan 0.75 = false),
-            featureTest v 0 p (float_lt (exist _ 0.75 q)) = true.
-    Proof. eexists; reflexivity. Qed.
+        featureTest v F1 is_lt_075 = true.
+    Proof. reflexivity. Qed.
 
     Proposition check_test2 :
-        forall (p : 1 < 3),
-            featureTest v 1 p (subset_mem s1 (fun '(exist _ s _) => eqb s "yellow")) = false.
+        featureTest v (FS F1) is_yellow = false.
     Proof. reflexivity. Qed.
 
     Proposition check_test3 :
-        forall (p : 2 < 3),
-            featureTest v 2 p (subset_mem s2 (fun '(exist _ s _) => eqb s "no")) = true.
+        featureTest v (FS (FS F1)) is_no = true.
     Proof. reflexivity. Qed.
+
+
+    Local Ltac check_getValue' :=
+        repeat (try (now setoid_rewrite getValueF1'); setoid_rewrite getValueFS').
+
+    Proposition check1_val' :
+        proj1_sig (getValue' v F1) = 0.5.
+    Proof. check_getValue'. Qed.
+
+    Proposition check2_val' :
+        proj1_sig (getValue' v (FS F1)) = "red".
+    Proof. check_getValue'. Qed.
+
+    Proposition check3_val' :
+        proj1_sig (getValue' v (FS (FS F1))) = "no".
+    Proof. check_getValue'. Qed.
+
+
+    Local Ltac check_featureTest' :=
+        unfold featureTest'; check_getValue'.
+
+    Proposition check_test1' :
+        featureTest' v F1 is_lt_075 = true.
+    Proof. check_featureTest'. Qed.
+
+    Proposition check_test2' :
+        featureTest' v (FS F1) is_yellow = false.
+    Proof. check_featureTest'. Qed.
+
+    Proposition check_test3' :
+        featureTest' v (FS (FS F1)) is_no = true.
+    Proof. check_featureTest'. Qed.
 
 End Examples.

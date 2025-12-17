@@ -32,25 +32,18 @@ type featureVec =
 | Coq_featureVecCons of feature * getFeatureKind * dom * int * featureSig
    * featureVec
 
+type fin =
+| F1 of int
+| FS of int * fin
+
 type feature_wrap = (feature, getFeatureKind) sigT
 
-val getFeature : int -> featureSig -> int -> feature_wrap option
+val getFeatureWrap : int -> featureSig -> fin -> feature_wrap
 
-val getFeatureWrapSane_obligation_1 : int -> int -> feature_wrap
+val getFeature : int -> featureSig -> fin -> feature
 
-val getFeatureWrapSane : int -> featureSig -> int -> feature_wrap
+val getValueS : int -> featureSig -> featureVec -> fin -> (feature, dom) sigT
 
-val getFeatureSane : int -> featureSig -> int -> feature
+val getValue' : int -> featureSig -> featureVec -> fin -> dom
 
-val getVector_obligation_3 :
-  (int -> featureSig -> featureVec -> int -> (feature_wrap, dom, __) sigT2
-  option) -> int -> featureSig -> featureVec -> feature -> getFeatureKind ->
-  dom -> int -> featureSig -> featureVec -> int -> feature_wrap -> dom -> dom
-
-val getVector :
-  int -> featureSig -> featureVec -> int -> (feature_wrap, dom, __) sigT2
-  option
-
-val getVectorValueSane : int -> featureSig -> featureVec -> int -> dom
-
-val featureTest : int -> featureSig -> featureVec -> int -> testIndex -> bool
+val featureTest' : int -> featureSig -> featureVec -> fin -> testIndex -> bool

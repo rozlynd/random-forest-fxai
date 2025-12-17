@@ -5,9 +5,8 @@ type 'a coq_sig = 'a
 type ('a, 'p) sigT =
 | Coq_existT of 'a * 'p
 
-type ('a, 'p, 'q) sigT2 =
-| Coq_existT2 of 'a * 'p * 'q
-
 val projT1 : ('a1, 'a2) sigT -> 'a1
+
+val projT2 : ('a1, 'a2) sigT -> 'a2
 
 
