@@ -81,10 +81,6 @@ Section Features.
                      {n : nat} {fs : featureSig n} (vs : featureVec fs) :
                         featureVec (featureSigCons f get fs).
 
-    Inductive fin : nat -> Type :=
-    | F1 {n : nat} : fin (S n)
-    | FS {n : nat} : fin n -> fin (S n).
-
 
     Definition feature_wrap : Type := { f : feature & getFeatureKind f }.
     Definition float_feature_wrap : feature_wrap := existT _ float_feature isContinuousFeature.

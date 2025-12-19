@@ -396,3 +396,178 @@ Section NonEmptyList.
 End NonEmptyList.
 
 Arguments necons {A}.
+
+
+(* Finite types *)
+
+Section Fin.
+
+    Inductive fin : nat -> Type :=
+    | F1 {n : nat} : fin (S n)
+    | FS {n : nat} : fin n -> fin (S n).
+
+    Fixpoint to_nat {n : nat} (p : fin n) : nat :=
+        match p with
+        | F1 => 0
+        | FS p => S (to_nat p)
+        end.
+
+    Definition to_fin : forall {n : nat} (i : nat), fin n + { ~ i < n }.
+        refine (fix to_fin {n : nat} {struct n} :=
+            match n return forall (i : nat), fin n + { ~ i < n } with
+            | 0 => fun i => inright _
+            | S n => fun i =>
+                match i return fin (S n) + { ~ i < S n } with
+                | 0 => inleft F1
+                | S i =>
+                    match to_fin i with
+                    | inleft p => inleft (FS p)
+                    | inright _ => inright _
+                    end
+                end
+            end
+        );
+        lia.
+    Defined.
+
+    Theorem to_nat_lt {n : nat} :
+        forall (p : fin n), to_nat p < n.
+    Proof.
+        induction p;
+        [   apply Nat.lt_0_succ
+        |   simpl; now apply -> Nat.succ_lt_mono ].
+    Qed.
+
+    Theorem to_nat_to_fin {n : nat} :
+        forall (p : fin n), to_fin (to_nat p) = inleft p.
+    Proof.
+        induction p as [| n p IH ]; try reflexivity;
+        simpl; now rewrite IH.
+    Qed.
+
+    Theorem to_fin_to_nat {n : nat} :
+        forall (i : nat) (p : fin n), to_fin i = inleft p -> to_nat p = i.
+    Proof.
+        induction n as [| n IH ]; intros i p H; try (now inversion p);
+        dependent destruction p.
+        -   destruct i; try reflexivity;
+            simpl in H; destruct (@to_fin n i); inversion H.
+        -   destruct i; try (now inversion H);
+            simpl in H; destruct (@to_fin n i) eqn:Heqi;
+                try (now inversion H);
+            simpl; f_equal; apply IH; now inversion H.
+    Qed.
+
+    Theorem to_nat_inj {n : nat} :
+        forall (m p : fin n), to_nat m = to_nat p -> m = p.
+    Proof.
+        intros m p H; cut (@inleft (fin n) (~ to_nat m < n) m = inleft p);
+        [   intro H'; now inversion H'
+        |   now rewrite <- to_nat_to_fin, H, -> to_nat_to_fin ].
+    Qed.
+
+    Theorem to_fin_lt {n : nat} :
+        forall (i : nat) (p : fin n), to_fin i = inleft p -> i < n.
+    Proof.
+        intros i p H; apply to_fin_to_nat in H;
+        rewrite <- H; now apply to_nat_lt.
+    Qed.
+
+
+    Definition to_nat' {n : nat} (p : fin n) : { i : nat | i < n } :=
+        exist _ (to_nat p) (to_nat_lt p).
+
+    Definition to_fin' {n : nat} : { i : nat | i < n } -> fin n.
+        refine (fun '(exist _ i q) =>
+            match @to_fin n i with
+            | inleft p => p
+            | inright _ => _
+            end
+        );
+        lia.
+    Defined.
+
+    Theorem to_fin_pi' {n : nat} :
+        forall (i : nat) (p q : i < n), to_fin' (exist _ i p) = to_fin' (exist _ i q).
+    Proof.
+        intros i; simpl; destruct (to_fin i);
+        try reflexivity; contradiction.
+    Qed.
+
+    Theorem to_nat_to_fin' {n : nat} :
+        forall (p : fin n), to_fin' (to_nat' p) = p.
+    Proof. intro p; unfold to_nat', to_fin'; now rewrite to_nat_to_fin. Qed.
+
+    Theorem to_fin_to_nat' {n : nat} :
+        forall (i : nat) (q : i < n), to_nat (to_fin' (exist _ i q)) = i.
+    Proof.
+        intros i q; destruct (@to_fin n i) as [ p |] eqn:Heqi; try lia;
+        cut (to_nat p = i); try (now apply to_fin_to_nat);
+        intro E; rewrite <- E; simpl; now rewrite Heqi.
+    Qed.
+
+End Fin.
+
+Module Type FinSig.
+    Parameter n : nat.
+End FinSig.
+
+Module FinOT (S : FinSig) : UsualOrderedType
+    with Definition t := fin S.n.
+
+    Definition t := fin S.n.
+    Definition eq := @Logic.eq t.
+    Definition lt := fun m p => (@to_nat S.n m < @to_nat S.n p)%nat.
+    Definition compare := fun m p => @to_nat S.n m ?= @to_nat S.n p.
+
+    Program Instance eq_equiv : Equivalence eq.
+
+    Program Instance lt_irreflexive : Irreflexive lt.
+    Next Obligation. unfold lt; intros p H; lia. Qed.
+
+    Program Instance lt_transitive : Transitive lt.
+    Next Obligation. unfold lt in *; lia. Qed.
+
+    Program Instance lt_strorder : StrictOrder lt.
+
+    Program Instance lt_compat : Proper (eq ==> eq ==> iff) lt.
+    Next Obligation. unfold lt; intros m m' Hm p p' Hp; now rewrite Hm, Hp. Qed.
+
+
+    Theorem compare_spec (m p : fin S.n) : CompareSpec (m = p) (lt m p) (lt p m) (compare m p).
+    Proof.
+        unfold lt, compare;
+        assert (H := PeanoNat.Nat.compare_spec (to_nat m) (to_nat p));
+        inversion H as [HEq | HLt | HGt]; clear H; constructor;
+        try assumption; now apply to_nat_inj.
+    Qed.
+
+    Definition eq_dec (m p : fin S.n) : { m = p } + { m <> p }.
+    Proof.
+        destruct (PeanoNat.Nat.eq_dec (to_nat m) (to_nat p)) as [HEq | HNeq].
+        -   left; now apply to_nat_inj.
+        -   right; intro abs; now rewrite abs in HNeq.
+    Qed.
+
+End FinOT.
+
+Module FinOTF (S : FinSig) : UsualOrderedTypeFull
+    with Definition t := fin S.n.
+    Module FOT := FinOT S.
+    #[warnings="-parsing"] Include OT_to_Full FOT.
+End FinOTF.
+
+Module FinSet (S : FinSig) : Sets
+    with Definition E.t := fin S.n
+    with Definition E.eq := @Logic.eq (fin S.n).
+    Module X := FinOT S.
+    Include MSetList.Make X.
+End FinSet.
+
+Module FinSetProperties (S : FinSig).
+    Module FOT := FinOTF S.
+    Module FS := FinSet S.
+    Module P := OrdProperties FS.
+    Module P' := MSets.MSetFacts.WFactsOn FOT FS.
+    Export P P.P P'.
+End FinSetProperties.

@@ -1,4 +1,5 @@
 open Features
+open Utils
 
 type 'class0 decisionTree =
 | Leaf of 'class0

@@ -1,3 +1,4 @@
+open Utils
 open Features
 open DT
 open RF
@@ -17,10 +18,6 @@ with type coq_class = string = struct
     Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,   (* chest-pain *)
     Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,  (* weight *)
     Coq_featureSigNil))))
-
-  let rec to_fin' m n =
-    if n == 0 then F1 m
-    else FS (m, (to_fin' m (n-1)))
 
   let to_fin = to_fin' n_features
 

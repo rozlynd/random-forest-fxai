@@ -42,10 +42,6 @@ type featureVec =
 | Coq_featureVecCons of feature * getFeatureKind * dom * int * featureSig
    * featureVec
 
-type fin =
-| F1 of int
-| FS of int * fin
-
 type feature_wrap = (feature, getFeatureKind) sigT
 
 (** val getFeatureWrap : int -> featureSig -> fin -> feature_wrap **)

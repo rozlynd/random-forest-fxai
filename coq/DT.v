@@ -1,7 +1,7 @@
 Require Import List.
 Import ListNotations.
 
-From RFXP Require Import Features.
+From RFXP Require Import Utils Features.
 
 Section DecisionTrees.
 
