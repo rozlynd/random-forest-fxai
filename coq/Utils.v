@@ -506,6 +506,13 @@ Section Fin.
         intro E; rewrite <- E; simpl; now rewrite Heqi.
     Qed.
 
+
+    Fixpoint lift {n : nat} (i : fin n) : fin (S n) :=
+        match i with
+        | F1 => F1
+        | FS i => FS (lift i)
+        end.
+
 End Fin.
 
 Module Type FinSig.
@@ -557,11 +564,57 @@ Module FinOTF (S : FinSig) : UsualOrderedTypeFull
     #[warnings="-parsing"] Include OT_to_Full FOT.
 End FinOTF.
 
-Module FinSet (S : FinSig) : Sets
+Module FinSet (S : FinSig) <: Sets
     with Definition E.t := fin S.n
     with Definition E.eq := @Logic.eq (fin S.n).
     Module X := FinOT S.
     Include MSetList.Make X.
+
+    (* Why does this work?? *)
+    Program Definition all_below (n : nat) : t :=
+        fold_right (fun x =>
+            match to_fin x with
+            | inleft y => add y
+            | inright _ => _ end) empty (init id n).
+
+    Definition all := all_below S.n.
+
+
+    Theorem In_all : forall (i : elt), In i all.
+    Proof.
+        unfold all. intro i. generalize S.n.
+        assert (fold_right (fun x => or (to_fin x = inleft i)) False (init id S.n)).
+        {
+            apply Exists_fold_right, Exists_nth.
+            exists (to_nat i), 0.
+            assert (L : to_nat i < S.n). { apply to_nat_lt. }
+            split; [ now rewrite init_length |].
+            replace (nth (to_nat i) (init id S.n) 0) with (to_nat i);
+                try (symmetry; apply nth_error_nth; now rewrite init_nth_error_Some).
+            apply to_nat_to_fin.
+        }
+        intro n; unfold all_below.
+        remember (init id n) as l; induction l as [| x l' ].
+        (* simpl in *; destruct H as [H | H].
+        -   rewrite H; apply add_spec; now left.
+        -   destruct (to_fin x). apply add_spec; right. apply IHl'. admit. (* oops *)
+            apply H. *)
+    Admitted.
+
+    Theorem all_spec : forall (i : elt), In i all <-> True.
+    Proof. intros; split; try auto; intro; apply In_all. Qed.
+
+    Definition compl (s : t) : t := diff all s.
+
+    Theorem In_compl : forall (s : t) (i : elt), In i (compl s) <-> ~ In i s.
+    Proof. intros s i; unfold compl; rewrite diff_spec, all_spec; tauto. Qed.
+
+    Instance compl_compat : Proper (Equal ==> Equal) compl.
+    Proof.
+        intros s1 s2 HEs x; rewrite 2 In_compl;
+        split; intros H abs; now apply H, HEs.
+    Qed.
+
 End FinSet.
 
 Module FinSetProperties (S : FinSig).
@@ -570,4 +623,25 @@ Module FinSetProperties (S : FinSig).
     Module P := OrdProperties FS.
     Module P' := MSets.MSetFacts.WFactsOn FOT FS.
     Export P P.P P'.
+
+    Import FS.
+
+    Theorem compl_compl : forall (s : t), Equal (compl (compl s)) s.
+    Proof.
+        intros s x; split; intro H.
+        -   rewrite 2 In_compl in H; now destruct (In_dec x s).
+        -   now rewrite 2 In_compl.
+    Qed.
+
+    Theorem Subset_compl :
+        forall (s1 s2 : t),
+            Subset s1 s2 <-> Subset (compl s2) (compl s1).
+    Proof.
+        intros s1 s2; split; intros HS x Hx.
+        -   apply In_compl; intro abs;
+            apply In_compl in Hx; apply Hx, HS, abs.
+        -   destruct (In_dec x s2) as [| HN ]; try trivial.
+            apply In_compl, HS, In_compl in HN; contradiction.
+    Qed.
+
 End FinSetProperties.
