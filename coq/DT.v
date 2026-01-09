@@ -1,40 +1,40 @@
-Require Import List.
+Require Import List Equalities.
 Import ListNotations.
 
-From RFXP Require Import Utils Features.
+From RFXP Require Import Utils Features Xp.
 
-Section DecisionTrees.
+Module DT (F : FeatureSig) (K' : UsualDecidableType) <: Classifier F
+    with Module K := K'.
 
-    Context (class : Type) {n : nat} (fs : featureSig n).
+    Module K := K'.
 
-    Inductive decisionTree : Type :=
-    | Leaf (c : class)
-    | Node (i : fin n)
-           (t : testIndex (getFeature fs i))
-           (dt1 dt2 : decisionTree).
+    Inductive _t : Type :=
+    | Leaf (c : K.t)
+    | Node (i : fin F.n)
+           (_ : testIndex (getFeature F.fs i))
+           (dt1 dt2 : _t).
 
-    Inductive DTSpec
-        (x : featureVec fs) (c : class) : decisionTree -> Prop :=
+    Definition t := _t.
+
+    Inductive DTSpec (x : featureVec F.fs) (c : K.t) : t -> Prop :=
     | leafPath : DTSpec x c (Leaf c)
     | nodePathLeft : forall i t dt1 dt2,
         featureTest' x i t = true -> DTSpec x c dt1 -> DTSpec x c (Node i t dt1 dt2)
     | nodePathRight : forall i t dt1 dt2,
         featureTest' x i t = false -> DTSpec x c dt2 -> DTSpec x c (Node i t dt1 dt2).
 
-    Fixpoint evalDT
-        (dt : decisionTree)
-        (x : featureVec fs) : class :=
+    Fixpoint eval (dt : t) (x : featureVec F.fs) : K.t :=
         match dt with
         | Leaf c => c
         | Node i t dt1 dt2 =>
             if featureTest' x i t then
-                evalDT dt1 x
+                eval dt1 x
             else
-                evalDT dt2 x
+                eval dt2 x
         end.
 
-    Theorem evalDTCorrect : forall (dt : decisionTree) (x : featureVec fs) (c : class),
-        DTSpec x c dt <-> evalDT dt x = c.
+    Theorem evalCorrect : forall (dt : t) (x : featureVec F.fs) (c : K.t),
+        DTSpec x c dt <-> eval dt x = c.
     Proof.
         intros; split; intro H.
         -   induction H as [
@@ -49,4 +49,4 @@ Section DecisionTrees.
                 |constructor 3; try assumption; auto].
     Qed.
 
-End DecisionTrees.
+End DT.

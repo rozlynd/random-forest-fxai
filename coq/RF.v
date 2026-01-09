@@ -1,24 +1,25 @@
-Require Import List.
+Require Import List Orders.
 Import ListNotations.
 
 Require Import String.
-From RFXP Require Import Utils Features DT Voting.
+From RFXP Require Import Utils Features Xp DT Voting.
 
 
-Module StringVoting : VotingSig StringOTF := Voting StringOTF.
+Module RF (F : FeatureSig) (K' : UsualOrderedType) <: Classifier F
+    with Module K := K'.
 
-Section RandomForests.
+    Module K := K'.
+    Module KFull : UsualOrderedTypeFull with Definition t := K.t := OT_to_Full K'.
+    Module KVoting : VotingSig KFull := Voting KFull.
 
-    Definition class := string.
+    Module Dt := DT F K.
 
-    Context {n : nat} (fs : featureSig n).
+    Definition t := nelist Dt.t.
 
-    Definition randomForest := nelist (decisionTree class fs).
-
-    Definition evalRF (rf : randomForest) (x : featureVec fs) : class :=
+    Definition eval (rf : t) (x : featureVec F.fs) : K.t :=
         match rf with
         | necons dt dts =>
-            StringVoting.vote (evalDT class fs dt x) (map (fun dt => evalDT class fs dt x) dts)
+            KVoting.vote (Dt.eval dt x) (map (fun dt => Dt.eval dt x) dts)
         end.
 
-End RandomForests.
+End RF.

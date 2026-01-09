@@ -1,18 +1,27 @@
-open DT
+open Datatypes
 open Features
 open List0
+open Orders
 open Utils
+open Xp
 
-module StringVoting = Voting.Voting(StringOTF)
+module RF =
+ functor (F:FeatureSig) ->
+ functor (K':UsualOrderedType) ->
+ struct
+  module K = K'
 
-type coq_class = string
+  module KFull = OT_to_Full(K')
 
-type randomForest = coq_class decisionTree nelist
+  module KVoting = Voting.Voting(KFull)
 
-(** val evalRF :
-    int -> featureSig -> randomForest -> featureVec -> coq_class **)
+  module Dt = DT.DT(F)(K)
 
-let evalRF n fs rf x =
-  let Coq_necons (dt, dts) = rf in
-  StringVoting.vote (evalDT n fs dt x)
-    (map (fun dt0 -> evalDT n fs dt0 x) dts)
+  type t = Dt.t nelist
+
+  (** val eval : t -> featureVec -> K.t **)
+
+  let eval rf x =
+    let Coq_necons (dt, dts) = rf in
+    KVoting.vote (Dt.eval dt x) (map (fun dt0 -> Dt.eval dt0 x) dts)
+ end

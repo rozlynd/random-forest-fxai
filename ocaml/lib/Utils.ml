@@ -5,8 +5,6 @@ open OrdersEx
 
 module StringOT = String_as_OT
 
-module StringOTF = OT_to_Full(StringOT)
-
 module StringSet = Make(StringOT)
 
 type 'a nelist =
@@ -24,22 +22,27 @@ let rec to_nat _ = function
 
 (** val to_fin : int -> int -> fin option **)
 
-let rec to_fin n i =
+let rec to_fin n0 i =
   (fun fO fS n -> if n=0 then fO () else fS (n-1))
     (fun _ -> None)
-    (fun n0 ->
+    (fun n1 ->
     (fun fO fS n -> if n=0 then fO () else fS (n-1))
-      (fun _ -> Some (F1 n0))
+      (fun _ -> Some (F1 n1))
       (fun i0 ->
-      match to_fin n0 i0 with
-      | Some p -> Some (FS (n0, p))
+      match to_fin n1 i0 with
+      | Some p -> Some (FS (n1, p))
       | None -> None)
       i)
-    n
+    n0
 
 (** val to_fin' : int -> int -> fin **)
 
-let to_fin' n pat =
-  match to_fin n pat with
+let to_fin' n0 pat =
+  match to_fin n0 pat with
   | Some p -> p
   | None -> assert false (* absurd case *)
+
+module type FinSig =
+ sig
+  val n : int
+ end

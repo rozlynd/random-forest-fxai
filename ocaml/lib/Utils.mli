@@ -6,9 +6,6 @@ open OrdersEx
 module StringOT :
  UsualOrderedType with type t = string
 
-module StringOTF :
- UsualOrderedTypeFull with type t = string
-
 module StringSet :
  Sets with module E = StringOT
 
@@ -24,3 +21,8 @@ val to_nat : int -> fin -> int
 val to_fin : int -> int -> fin option
 
 val to_fin' : int -> int -> fin
+
+module type FinSig =
+ sig
+  val n : int
+ end
