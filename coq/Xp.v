@@ -2,17 +2,35 @@ Require Import Morphisms.
 
 From RFXP Require Import Utils Features.
 
-Module Explanations (F : FeatureSig).
 
-    Module Props := FinSetProperties F.
+Module Type FeatureSig <: FinSig.
+    Include FinSig.
+    Parameter fs : featureSig n.
+
+    Module N : FinSig
+        with Definition n := n.
+        Definition n := n.
+    End N.
+
+    Module Props := FinSetProperties N.
     Module S := Props.FS.
     Export Props.
-    
+
+    Definition equiv (X : S.t) (v1 v2 : featureVec fs) : Prop :=
+        forall (i : fin n), S.In i X -> getValue' v1 i = getValue' v2 i.
+
+    Global Instance equiv_compat : Proper (S.Equal ==> Logic.eq ==> Logic.eq ==> iff) equiv.
+    Proof.
+        intros s1 s2 HEs v1 v1' HE1 v2 v2' HE2; subst v1' v2';
+        split; intros H i Hi; apply H, HEs, Hi.
+    Qed.
+
+End FeatureSig.
+
+
+Module Explanations (Export F : FeatureSig).
 
     Section ExplanationsMainDefs.
-
-        Definition equiv (X : S.t) (v1 v2 : featureVec F.fs) : Prop :=
-            forall (i : fin F.n), S.In i X -> getValue' v1 i = getValue' v2 i.
 
         Context {K : Type} (k : featureVec F.fs -> K) (v : featureVec F.fs).
 
@@ -29,13 +47,6 @@ Module Explanations (F : FeatureSig).
             WAXp X /\ forall X', S.Subset X' X -> WAXp X' -> S.Equal X' X.
 
     End ExplanationsMainDefs.
-
-
-    Global Instance equiv_compat : Proper (S.Equal ==> Logic.eq ==> Logic.eq ==> iff) equiv.
-    Proof.
-        intros s1 s2 HEs v1 v1' HE1 v2 v2' HE2; subst v1' v2';
-        split; intros H i Hi; apply H, HEs, Hi.
-    Qed.
 
     Global Instance WCXp_compat {K : Type} : Proper (Logic.eq ==> Logic.eq ==> S.Equal ==> iff) (@WCXp K).
     Proof.

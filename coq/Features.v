@@ -318,9 +318,3 @@ Section Examples.
     Proof. check_featureTest'. Qed.
 
 End Examples.
-
-
-Module Type FeatureSig <: FinSig.
-    Include FinSig.
-    Parameter fs : featureSig n.
-End FeatureSig.
