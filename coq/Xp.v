@@ -12,9 +12,8 @@ Module Type FeatureSig <: FinSig.
         Definition n := n.
     End N.
 
-    Module Props := FinSetProperties N.
+    Module Export Props := FinSetProperties N.
     Module S := Props.FS.
-    Export Props.
 
     Definition equiv (X : S.t) (v1 v2 : featureVec fs) : Prop :=
         forall (i : fin n), S.In i X -> getValue' v1 i = getValue' v2 i.
@@ -28,7 +27,8 @@ Module Type FeatureSig <: FinSig.
 End FeatureSig.
 
 
-Module Type Classifier (F : FeatureSig) (K : UsualDecidableType).
+Module Type Classifier (F : FeatureSig).
+    Declare Module K : UsualDecidableType.
     Parameter k : featureVec F.fs -> K.t.
 End Classifier.
 
@@ -36,8 +36,7 @@ Module Type ClassifierInstance (F : FeatureSig).
     Parameter v : featureVec F.fs.
 End ClassifierInstance.
 
-
-Module Type ExplanationProblem := FeatureSig <+ UsualDecidableType <+ Classifier <+ ClassifierInstance.
+Module Type ExplanationProblem := FeatureSig <+ Classifier <+ ClassifierInstance.
 
 
 Module Explanations (Export E : ExplanationProblem).
@@ -134,7 +133,7 @@ Module ExplanationsFacts (Export E : ExplanationProblem).
     Proof.
         intros X; split; intro H.
         -   intros v' Heq;
-            destruct (E.eq_dec (k v) (k v')); try assumption;
+            destruct (K.eq_dec (k v) (k v')); try assumption;
             exfalso; apply H; exists v'; split; assumption.
         -   intros (v' & H1 & H2); apply H2, H, H1.
     Qed.
