@@ -29,7 +29,7 @@ End FeatureSig.
 
 Module Type Classifier (F : FeatureSig).
     Declare Module K : UsualDecidableType.
-    Parameter k : featureVec F.fs -> K.t.
+    Parameter eval : featureVec F.fs -> K.t.
 End Classifier.
 
 Module Type ClassifierInstance (F : FeatureSig).
@@ -42,10 +42,10 @@ Module Type ExplanationProblem := FeatureSig <+ Classifier <+ ClassifierInstance
 Module Explanations (Export E : ExplanationProblem).
 
     Definition WCXp (X : S.t) : Prop :=
-        exists (v' : featureVec fs), equiv (S.compl X) v v' /\ k v <> k v'.
+        exists (v' : featureVec fs), equiv (S.compl X) v v' /\ eval v <> eval v'.
 
     Definition WAXp (X : S.t) : Prop :=
-        forall (v' : featureVec fs), equiv X v v' -> k v = k v'.
+        forall (v' : featureVec fs), equiv X v v' -> eval v = eval v'.
 
     Definition CXp (X : S.t) : Prop :=
         WCXp X /\ forall X', S.Subset X' X -> WCXp X' -> S.Equal X' X.
@@ -133,7 +133,7 @@ Module ExplanationsFacts (Export E : ExplanationProblem).
     Proof.
         intros X; split; intro H.
         -   intros v' Heq;
-            destruct (K.eq_dec (k v) (k v')); try assumption;
+            destruct (K.eq_dec (eval v) (eval v')); try assumption;
             exfalso; apply H; exists v'; split; assumption.
         -   intros (v' & H1 & H2); apply H2, H, H1.
     Qed.
