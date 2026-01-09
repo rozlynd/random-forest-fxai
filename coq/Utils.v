@@ -27,7 +27,7 @@ Section StringEnumerations.
 
     Import StringSet.
 
-    Definition enum (s : StringSet.t) : Type := { x : string | In x s }.
+    Definition string_enum (s : StringSet.t) : Type := { x : string | In x s }.
 
 End StringEnumerations.
 

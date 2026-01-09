@@ -42,25 +42,25 @@ Section Features.
 
     End FloatFeature.
 
-    Section EnumFeature.
+    Section StringEnumFeature.
 
         Import StringSet.
 
         (* Given a feature based on some enumeration of strings { s1, .., sn },
            there is a test for every subset of the enumeration: whether the
            feature value is a member of that subset *)
-        Variant enum_test (s : StringSet.t) := subset_mem (p : enum s -> bool).
+        Variant string_enum_test (s : StringSet.t) := subset_mem (p : string_enum s -> bool).
 
-        Definition enum_feature (s : StringSet.t) : feature := {|
-            dom := enum s ;
-            testIndex := enum_test s ;
+        Definition string_enum_feature (s : StringSet.t) : feature := {|
+            dom := string_enum s ;
+            testIndex := string_enum_test s ;
             tests := fun t x =>
                 match t with
                 | subset_mem _ p => p x
                 end
         |}.
 
-    End EnumFeature.
+    End StringEnumFeature.
 
 
     (* TODO: include more features (ints?) *)
@@ -68,7 +68,7 @@ Section Features.
     Inductive getFeatureKind : feature -> Type :=
     | isContinuousFeature : getFeatureKind float_feature
     | isBooleanFeature : getFeatureKind boolean_feature
-    | isCategoricalFeature (s : StringSet.t) : getFeatureKind (enum_feature s).
+    | isStringEnumFeature (s : StringSet.t) : getFeatureKind (string_enum_feature s).
 
     Inductive featureSig : nat -> Type :=
     | featureSigNil : featureSig 0
@@ -85,7 +85,7 @@ Section Features.
     Definition feature_wrap : Type := { f : feature & getFeatureKind f }.
     Definition float_feature_wrap : feature_wrap := existT _ float_feature isContinuousFeature.
     Definition boolean_feature_wrap : feature_wrap := existT _ boolean_feature isBooleanFeature.
-    Definition enum_feature_wrap (s : StringSet.t) : feature_wrap := existT _ (enum_feature s) (isCategoricalFeature s).
+    Definition string_enum_feature_wrap (s : StringSet.t) : feature_wrap := existT _ (string_enum_feature s) (isStringEnumFeature s).
 
 
     Fixpoint getFeatureWrap {n : nat} (fs : featureSig n) {struct fs} : fin n -> feature_wrap :=
@@ -227,14 +227,14 @@ Section Examples.
 
     Local Definition fs : featureSig 3 :=
         featureSigCons float_feature isContinuousFeature
-            (featureSigCons (enum_feature s1) (isCategoricalFeature s1)
-                (featureSigCons (enum_feature s2) (isCategoricalFeature s2)
+            (featureSigCons (string_enum_feature s1) (isStringEnumFeature s1)
+                (featureSigCons (string_enum_feature s2) (isStringEnumFeature s2)
                     featureSigNil)).
 
     Local Program Definition v : featureVec fs :=
         featureVecCons isContinuousFeature (exist _ 0.5 _)
-            (featureVecCons (isCategoricalFeature s1) (exist _ "red" _)
-                (featureVecCons (isCategoricalFeature s2) (exist _ "no" _)
+            (featureVecCons (isStringEnumFeature s1) (exist _ "red" _)
+                (featureVecCons (isStringEnumFeature s2) (exist _ "no" _)
                     featureVecNil)).
     Solve All Obligations with check_mem_string.
 
@@ -244,11 +244,11 @@ Section Examples.
     Proof. reflexivity. Qed.
 
     Proposition check2_dom :
-        getFeature fs (FS F1) = enum_feature s1.
+        getFeature fs (FS F1) = string_enum_feature s1.
     Proof. reflexivity. Qed.
 
     Proposition check3_dom :
-        getFeature fs (FS (FS F1)) = enum_feature s2.
+        getFeature fs (FS (FS F1)) = string_enum_feature s2.
     Proof. reflexivity. Qed.
 
 
@@ -268,9 +268,9 @@ Section Examples.
     Definition is_lt_075 : float_test.
     Proof. refine (float_lt (exist _ 0.75 _)); reflexivity. Defined.
 
-    Definition is_yellow : enum_test s1 :=
+    Definition is_yellow : string_enum_test s1 :=
         subset_mem s1 (fun '(exist _ s _) => eqb s "yellow").
-    Definition is_no : enum_test s2 :=
+    Definition is_no : string_enum_test s2 :=
         subset_mem s2 (fun '(exist _ s _) => eqb s "no").
 
     Proposition check_test1 :

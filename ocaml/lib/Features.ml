@@ -23,15 +23,15 @@ let boolean_feature =
 let float_feature t0 pat =
   ltb (Obj.magic pat) (Obj.magic t0)
 
-(** val enum_feature : StringSet.t -> feature **)
+(** val string_enum_feature : StringSet.t -> feature **)
 
-let enum_feature _ t0 x =
+let string_enum_feature _ t0 x =
   Obj.magic t0 x
 
 type getFeatureKind =
 | Coq_isContinuousFeature
 | Coq_isBooleanFeature
-| Coq_isCategoricalFeature of StringSet.t
+| Coq_isStringEnumFeature of StringSet.t
 
 type featureSig =
 | Coq_featureSigNil

@@ -16,12 +16,12 @@ val boolean_feature : feature
 
 val float_feature : feature
 
-val enum_feature : StringSet.t -> feature
+val string_enum_feature : StringSet.t -> feature
 
 type getFeatureKind =
 | Coq_isContinuousFeature
 | Coq_isBooleanFeature
-| Coq_isCategoricalFeature of StringSet.t
+| Coq_isStringEnumFeature of StringSet.t
 
 type featureSig =
 | Coq_featureSigNil
