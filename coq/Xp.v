@@ -184,11 +184,17 @@ Module Type Explainer (Export E : ExplanationProblem).
 
     Parameter getNew : list S.t -> S.t.
 
-    Axiom getNewCorrect :
+End Explainer.
+
+Module Type CorrectExplainer (E : ExplanationProblem) <: Explainer E.
+
+    Include Explainer E.
+
+    Axiom getNewSound :
         forall Xs, isXp (getNew Xs).
 
     Axiom getNewComplete :
         forall Xs, List.In (getNew Xs) Xs ->
             forall X, isXp X -> List.In X Xs.
 
-End Explainer.
+End CorrectExplainer.
