@@ -28,10 +28,16 @@ let float_feature t0 pat =
 let string_enum_feature _ t0 x =
   Obj.magic t0 x
 
+(** val enum_feature : int -> feature **)
+
+let enum_feature _ t0 x =
+  Obj.magic t0 x
+
 type getFeatureKind =
 | Coq_isContinuousFeature
 | Coq_isBooleanFeature
 | Coq_isStringEnumFeature of StringSet.t
+| Coq_isEnumFeature of int
 
 type featureSig =
 | Coq_featureSigNil

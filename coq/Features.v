@@ -62,13 +62,31 @@ Section Features.
 
     End StringEnumFeature.
 
+    Section EnumFeature.
+
+        Variable n : nat.
+
+        Variant enum_test := enum_mem (p : fin n -> bool).
+
+        Definition enum_feature : feature := {|
+            dom := fin n ;
+            testIndex := enum_test ;
+            tests := fun t x =>
+                match t with
+                | enum_mem p => p x
+                end
+        |}.
+
+    End EnumFeature.
+
 
     (* TODO: include more features (ints?) *)
     (* TODO: abstract away the float and string stuff (modules??) *)
     Inductive getFeatureKind : feature -> Type :=
     | isContinuousFeature : getFeatureKind float_feature
     | isBooleanFeature : getFeatureKind boolean_feature
-    | isStringEnumFeature (s : StringSet.t) : getFeatureKind (string_enum_feature s).
+    | isStringEnumFeature (s : StringSet.t) : getFeatureKind (string_enum_feature s)
+    | isEnumFeature (n : nat) : getFeatureKind (enum_feature n).
 
     Inductive featureSig : nat -> Type :=
     | featureSigNil : featureSig 0
@@ -86,6 +104,7 @@ Section Features.
     Definition float_feature_wrap : feature_wrap := existT _ float_feature isContinuousFeature.
     Definition boolean_feature_wrap : feature_wrap := existT _ boolean_feature isBooleanFeature.
     Definition string_enum_feature_wrap (s : StringSet.t) : feature_wrap := existT _ (string_enum_feature s) (isStringEnumFeature s).
+    Definition enum_feature_wrap (n : nat) : feature_wrap := existT _ (enum_feature n) (isEnumFeature n).
 
 
     Fixpoint getFeatureWrap {n : nat} (fs : featureSig n) {struct fs} : fin n -> feature_wrap :=
