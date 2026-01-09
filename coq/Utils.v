@@ -609,7 +609,7 @@ Module FinSet (S : FinSig) <: Sets
     Theorem In_compl : forall (s : t) (i : elt), In i (compl s) <-> ~ In i s.
     Proof. intros s i; unfold compl; rewrite diff_spec, all_spec; tauto. Qed.
 
-    Instance compl_compat : Proper (Equal ==> Equal) compl.
+    Global Instance compl_compat : Proper (Equal ==> Equal) compl.
     Proof.
         intros s1 s2 HEs x; rewrite 2 In_compl;
         split; intros H abs; now apply H, HEs.

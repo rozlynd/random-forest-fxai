@@ -2,28 +2,25 @@ Require Import Morphisms.
 
 From RFXP Require Import Utils Features.
 
-Module Explanations (F : FinSig).
-
-    Definition n := F.n.
+Module Explanations (F : FeatureSig).
 
     Module Props := FinSetProperties F.
     Module S := Props.FS.
     Export Props.
     
+
     Section ExplanationsMainDefs.
 
-        Context {fs : featureSig n}.
+        Definition equiv (X : S.t) (v1 v2 : featureVec F.fs) : Prop :=
+            forall (i : fin F.n), S.In i X -> getValue' v1 i = getValue' v2 i.
 
-        Definition equiv (X : S.t) (v1 v2 : featureVec fs) : Prop :=
-            forall (i : fin n), S.In i X -> getValue' v1 i = getValue' v2 i.
-
-        Context {K : Type} (k : featureVec fs -> K) (v : featureVec fs).
+        Context {K : Type} (k : featureVec F.fs -> K) (v : featureVec F.fs).
 
         Definition WCXp (X : S.t) : Prop :=
-            exists (v' : featureVec fs), equiv (S.compl X) v v' /\ k v <> k v'.
+            exists (v' : featureVec F.fs), equiv (S.compl X) v v' /\ k v <> k v'.
 
         Definition WAXp (X : S.t) : Prop :=
-            forall (v' : featureVec fs), equiv X v v' -> k v = k v'.
+            forall (v' : featureVec F.fs), equiv X v v' -> k v = k v'.
 
         Definition CXp (X : S.t) : Prop :=
             WCXp X /\ forall X', S.Subset X' X -> WCXp X' -> S.Equal X' X.
@@ -33,48 +30,39 @@ Module Explanations (F : FinSig).
 
     End ExplanationsMainDefs.
 
+
+    Global Instance equiv_compat : Proper (S.Equal ==> Logic.eq ==> Logic.eq ==> iff) equiv.
+    Proof.
+        intros s1 s2 HEs v1 v1' HE1 v2 v2' HE2; subst v1' v2';
+        split; intros H i Hi; apply H, HEs, Hi.
+    Qed.
+
+    Global Instance WCXp_compat {K : Type} : Proper (Logic.eq ==> Logic.eq ==> S.Equal ==> iff) (@WCXp K).
+    Proof.
+        intros k1 k2 HEk v1 v2 HEv s1 s2 HEs; split; intros (v' & H1 & H2);
+        subst k2 v2; exists v'; split; try (now rewrite <- ?HEs); now rewrite -> ?HEs.
+    Qed.
+
+    Global Instance WCXAp_compat {K : Type} : Proper (Logic.eq ==> Logic.eq ==> S.Equal ==> iff) (@WAXp K).
+    Proof.
+        intros k1 k2 HEk v1 v2 HEv s1 s2 HEs; split; intros H v' HE.
+        -   subst k2 v2; apply H; now rewrite HEs.
+        -   subst k2 v2; apply H; now rewrite <- HEs.
+    Qed.
+
 End Explanations.
 
 
-Module ExplanationsFacts (F : FinSig).
+Module ExplanationsFacts (F : FeatureSig).
 
     Module Xp := Explanations F.
     Import Xp Props.
 
-    Definition n := F.n.
-
     Section Facts.
-
-        Context {fs : featureSig n}.
-
-        Instance equiv_compat : Proper (S.Equal ==> eq ==> eq ==> iff) (@equiv fs).
-        Proof.
-            intros s1 s2 HEs v1 v1' HE1 v2 v2' HE2; subst v1' v2';
-            split; intros H i Hi; apply H, HEs, Hi.
-        Qed.
-
-        Instance compl_compat : Proper (S.Equal ==> S.Equal) S.compl.
-        Proof. exact S.compl_compat. Qed.
-        
-        Context {K : Type}.
-
-        Instance WCXp_compat : Proper (eq ==> eq ==> S.Equal ==> iff) (@WCXp fs K).
-        Proof.
-            intros k1 k2 HEk v1 v2 HEv s1 s2 HEs; split; intros (v' & H1 & H2);
-            subst k2 v2; exists v'; split; try (now rewrite <- ?HEs); now rewrite -> ? HEs.
-        Qed.
-
-        Instance WCAp_compat : Proper (eq ==> eq ==> S.Equal ==> iff) (@WAXp fs K).
-        Proof.
-            intros k1 k2 HEk v1 v2 HEv s1 s2 HEs; split; intros H v' HE.
-            -   subst k2 v2; apply H; now rewrite HEs.
-            -   subst k2 v2; apply H; now rewrite <- HEs.
-        Qed.
-
 
         (* Monotonicity *)
 
-        Context (k : featureVec fs -> K) (v : featureVec fs).
+        Context {K : Type} (k : featureVec F.fs -> K) (v : featureVec F.fs).
 
         Theorem WCXp_monotonic :
             forall (X1 X2 : S.t), S.Subset X1 X2 -> WCXp k v X1 -> WCXp k v X2.
