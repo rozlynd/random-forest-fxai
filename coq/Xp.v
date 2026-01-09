@@ -172,3 +172,23 @@ Module ExplanationsFacts (Export E : ExplanationProblem).
     Qed.
 
 End ExplanationsFacts.
+
+
+Module Type Explainer (Export E : ExplanationProblem).
+
+    Module Xp := Explanations E.
+
+    Inductive isXp (X : S.t) : Type :=
+    | isAXp : Xp.AXp X -> isXp X
+    | isCXp : Xp.CXp X -> isXp X.
+
+    Parameter getNew : list S.t -> S.t.
+
+    Axiom getNewCorrect :
+        forall Xs, isXp (getNew Xs).
+
+    Axiom getNewComplete :
+        forall Xs, List.In (getNew Xs) Xs ->
+            forall X, isXp X -> List.In X Xs.
+
+End Explainer.
