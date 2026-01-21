@@ -17,10 +17,7 @@ Module StringSet : Sets
     MSetList.Make StringOT.
 
 Module StringSetProperties := OrdProperties StringSet.
-Export StringSetProperties StringSetProperties.P.
-
 Module StringSetMoreProperties := MSets.MSetFacts.WFactsOn StringOT StringSet.
-Export StringSetMoreProperties.
 
 
 Section StringEnumerations.
@@ -313,7 +310,6 @@ Module FloatSet : Sets
     MSetList.Make FloatOT.
 
 Module FloatSetProperties := OrdProperties FloatSet.
-Export FloatSetProperties FloatSetProperties.P.
 
 
 (* List utils *)
@@ -622,7 +618,7 @@ Module FinSetProperties (S : FinSig).
     Module FS := FinSet S.
     Module P := OrdProperties FS.
     Module P' := MSets.MSetFacts.WFactsOn FOT FS.
-    Export P P.P P'.
+    Import P P.P P'.
 
     Import FS.
 
@@ -645,3 +641,6 @@ Module FinSetProperties (S : FinSig).
     Qed.
 
 End FinSetProperties.
+
+(* a reflexivity proof in Feature breaks if I remove this?? *)
+Export StringSetMoreProperties.

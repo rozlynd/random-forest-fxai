@@ -233,6 +233,7 @@ End Features.
 Section Examples.
 
     Import String.
+    (*Import StringSetMoreProperties.*)
     Local Open Scope string_scope.
     Local Open Scope float_scope.
 
