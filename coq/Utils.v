@@ -509,6 +509,12 @@ Section Fin.
         | FS i => FS (lift i)
         end.
 
+    Fixpoint liftn {p : nat} (n : nat) : fin p -> fin (n + p) :=
+        match n return fin p -> fin (n + p) with
+        | 0 => fun i => i
+        | S n => fun i => lift (liftn n i)
+        end.
+
 End Fin.
 
 Module Type FinSig.
@@ -566,39 +572,55 @@ Module FinSet (S : FinSig) <: Sets
     Module X := FinOT S.
     Include MSetList.Make X.
 
-    (* Why does this work?? *)
-    Program Definition all_below (n : nat) : t :=
-        fold_right (fun x =>
-            match to_fin x with
-            | inleft y => add y
-            | inright _ => _ end) empty (init id n).
 
-    Definition all := all_below S.n.
+    Local Program Fixpoint all_below (n : nat) : t + { ~ n <= S.n } :=
+        match n with
+        | 0 => inleft empty
+        | S n =>
+            match to_fin n with
+            | inleft p =>
+                match all_below n with
+                | inleft s => inleft (add p s)
+                | inright _ => inright _
+                end
+            | inright _ => inright _
+            end
+        end.
+    Solve All Obligations with lia.
 
+    Lemma In_all_below : forall (n : nat), n <= S.n ->
+        exists (s : t), all_below n = inleft s /\
+            forall (i : elt), to_nat i < n -> In i s.
+    Proof.
+        induction n as [| n IH ]; intros Hn.
+        -   exists empty; split; try reflexivity;
+            intros i H; inversion H.
+        -   destruct IH as (s & H1 & H2); try lia;
+            destruct (@to_fin S.n n) as [p |] eqn:Heqn; try lia;
+            exists (add p s); split;
+                try (simpl; now rewrite Heqn, H1);
+            intros i Hi; inversion Hi; apply add_spec;
+                try (right; now apply H2);
+            left; apply to_nat_inj; apply to_fin_to_nat in Heqn; lia.
+    Qed.
+
+    Program Definition all :=
+        match all_below S.n with
+        | inleft t => t
+        | inright _ => _
+        end.
+    Solve All Obligations with lia.
 
     Theorem In_all : forall (i : elt), In i all.
     Proof.
-        unfold all. intro i. generalize S.n.
-        assert (fold_right (fun x => or (to_fin x = inleft i)) False (init id S.n)).
-        {
-            apply Exists_fold_right, Exists_nth.
-            exists (to_nat i), 0.
-            assert (L : to_nat i < S.n). { apply to_nat_lt. }
-            split; [ now rewrite init_length |].
-            replace (nth (to_nat i) (init id S.n) 0) with (to_nat i);
-                try (symmetry; apply nth_error_nth; now rewrite init_nth_error_Some).
-            apply to_nat_to_fin.
-        }
-        intro n; unfold all_below.
-        remember (init id n) as l; induction l as [| x l' ].
-        (* simpl in *; destruct H as [H | H].
-        -   rewrite H; apply add_spec; now left.
-        -   destruct (to_fin x). apply add_spec; right. apply IHl'. admit. (* oops *)
-            apply H. *)
-    Admitted.
+        intros i; unfold all;
+        destruct (In_all_below S.n (le_n S.n)) as (s & H1 & H2);
+        rewrite H1; apply H2, to_nat_lt.
+    Qed.
 
     Theorem all_spec : forall (i : elt), In i all <-> True.
     Proof. intros; split; try auto; intro; apply In_all. Qed.
+
 
     Definition compl (s : t) : t := diff all s.
 
