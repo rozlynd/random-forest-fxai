@@ -1,5 +1,4 @@
 open Rfxp
+open Driver
 
-module Rfxp_main = Explainer.Main(Driver.InputData)
-
-let () = print_endline (Rfxp_main.main ())
+let () = print_endline (RF.eval random_forest instance)

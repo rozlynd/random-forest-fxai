@@ -19,16 +19,17 @@ Arguments Leaf {n fs K}.
 Arguments Node {n fs K}.
 
 
-Module DTOn (F' : FeatureSig) (K' : UsualDecidableType) <: Classifier
-    with Module F := F'
-    with Module K := K'.
+Module Type DTOn (F : FeatureSig) (O : Output) := ClassifierOn F O
+    with Definition t := dt F.fs O.K.t.
 
-    Module F := F'.
-    Module K := K'.
+Module Type DT <: Classifier := FeatureSig <+ Output <+ DTOn.
 
-    Definition t := dt F.fs K.t.
 
-    Fixpoint eval (dt : t) (x : featureVec F.fs) : K.t :=
+Module MakeDT (F : FeatureSig) (O : Output) <: DTOn F O.
+    
+    Definition t := dt F.fs O.K.t.
+
+    Fixpoint eval (dt : t) (x : featureVec F.fs) : O.K.t :=
         match dt with
         | Leaf c => c
         | Node i t dt1 dt2 =>
@@ -38,14 +39,14 @@ Module DTOn (F' : FeatureSig) (K' : UsualDecidableType) <: Classifier
                 eval dt2 x
         end.
 
-    Inductive DTSpec (x : featureVec F.fs) (c : K.t) : t -> Prop :=
+    Inductive DTSpec (x : featureVec F.fs) (c : O.K.t) : t -> Prop :=
     | leafPath : DTSpec x c (Leaf c)
     | nodePathLeft : forall i t dt1 dt2,
         featureTest' x i t = true -> DTSpec x c dt1 -> DTSpec x c (Node i t dt1 dt2)
     | nodePathRight : forall i t dt1 dt2,
         featureTest' x i t = false -> DTSpec x c dt2 -> DTSpec x c (Node i t dt1 dt2).
 
-    Theorem evalCorrect : forall (dt : t) (x : featureVec F.fs) (c : K.t),
+    Theorem evalCorrect : forall (dt : t) (x : featureVec F.fs) (c : O.K.t),
         DTSpec x c dt <-> eval dt x = c.
     Proof.
         intros; split; intro H.
@@ -61,10 +62,15 @@ Module DTOn (F' : FeatureSig) (K' : UsualDecidableType) <: Classifier
                 |constructor 3; try assumption; auto].
     Qed.
 
-End DTOn.
+End MakeDT.
 
-Module Type DT <: Classifier.
-    Declare Module F' : FeatureSig.
-    Declare Module K' : UsualDecidableType.
-    Include DTOn F' K'.
-End DT.
+
+Module Type TreeEnsembleOn (F : FeatureSig) (O : Output) <: ClassifierOn F O.
+
+    Declare Module O_dt : Output.
+    Declare Module Dt : DTOn F O_dt.
+    Include ClassifierOn F O with Definition t := nelist Dt.t.
+
+End TreeEnsembleOn.
+
+Module Type TreeEnsemble := FeatureSig <+ Output <+ TreeEnsembleOn.

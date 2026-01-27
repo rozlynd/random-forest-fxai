@@ -1,32 +1,16 @@
-open Equalities
 open Features
 open Utils
 open Xp
 
-module DT :
+type 'k dt =
+| Leaf of 'k
+| Node of fin * testIndex * 'k dt * 'k dt
+
+module MakeDT :
  functor (F:FeatureSig) ->
- functor (K':UsualDecidableType) ->
+ functor (O:Output) ->
  sig
-  module K :
-   sig
-    type t = K'.t
+  type t = O.K.t dt
 
-    val eq_dec : t -> t -> bool
-   end
-
-  type t_ =
-  | Leaf of K.t
-  | Node of fin * testIndex * t_ * t_
-
-  val t__rect :
-    (K.t -> 'a1) -> (fin -> testIndex -> t_ -> 'a1 -> t_ -> 'a1 -> 'a1) -> t_
-    -> 'a1
-
-  val t__rec :
-    (K.t -> 'a1) -> (fin -> testIndex -> t_ -> 'a1 -> t_ -> 'a1 -> 'a1) -> t_
-    -> 'a1
-
-  type t = t_
-
-  val eval : t -> featureVec -> K.t
+  val eval : t -> featureVec -> O.K.t
  end

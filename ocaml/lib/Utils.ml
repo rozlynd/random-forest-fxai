@@ -22,27 +22,22 @@ let rec to_nat _ = function
 
 (** val to_fin : int -> int -> fin option **)
 
-let rec to_fin n0 i =
+let rec to_fin n i =
   (fun fO fS n -> if n=0 then fO () else fS (n-1))
     (fun _ -> None)
-    (fun n1 ->
+    (fun n0 ->
     (fun fO fS n -> if n=0 then fO () else fS (n-1))
-      (fun _ -> Some (F1 n1))
+      (fun _ -> Some (F1 n0))
       (fun i0 ->
-      match to_fin n1 i0 with
-      | Some p -> Some (FS (n1, p))
+      match to_fin n0 i0 with
+      | Some p -> Some (FS (n0, p))
       | None -> None)
       i)
-    n0
+    n
 
 (** val to_fin' : int -> int -> fin **)
 
-let to_fin' n0 pat =
-  match to_fin n0 pat with
+let to_fin' n pat =
+  match to_fin n pat with
   | Some p -> p
   | None -> assert false (* absurd case *)
-
-module type FinSig =
- sig
-  val n : int
- end

@@ -21,8 +21,3 @@ val to_nat : int -> fin -> int
 val to_fin : int -> int -> fin option
 
 val to_fin' : int -> int -> fin
-
-module type FinSig =
- sig
-  val n : int
- end

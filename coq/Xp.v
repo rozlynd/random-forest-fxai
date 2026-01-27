@@ -5,12 +5,18 @@ From RFXP Require Import Utils Features.
 
 Module Type FeatureSigOn (N : FinSig).
     Parameter fs : featureSig N.n.
+End FeatureSigOn.
 
-    Module FinSetProps := FinSetProperties N.
+Module Type FeatureSig := FinSig <+ FeatureSigOn.
+
+
+Module FeatureSigDefs (F : FeatureSig).
+
+    Module FinSetProps := FinSetProperties F.
     Module S := FinSetProps.FS.
 
-    Definition equiv (X : S.t) (v1 v2 : featureVec fs) : Prop :=
-        forall (i : fin N.n), S.In i X -> getValue' v1 i = getValue' v2 i.
+    Definition equiv (X : S.t) (v1 v2 : featureVec F.fs) : Prop :=
+        forall (i : fin F.n), S.In i X -> getValue' v1 i = getValue' v2 i.
 
     Global Instance equiv_compat : Proper (S.Equal ==> Logic.eq ==> Logic.eq ==> iff) equiv.
     Proof.
@@ -18,35 +24,32 @@ Module Type FeatureSigOn (N : FinSig).
         split; intros H i Hi; apply H, HEs, Hi.
     Qed.
 
-End FeatureSigOn.
-
-Module Type FeatureSig.
-    Declare Module N : FinSig.
-    Include FeatureSigOn N.
-End FeatureSig.
+End FeatureSigDefs.
 
 
-Module Type ClassifierOn (N : FinSig) (F : FeatureSigOn N).
+Module Type Output.
     Declare Module K : UsualDecidableType.
+End Output.
+
+Module Type ClassifierOn (F : FeatureSig) (O : Output).
     Parameter t : Type.
-    Parameter eval : t -> featureVec F.fs -> K.t.
+    Parameter eval : t -> featureVec F.fs -> O.K.t.
 End ClassifierOn.
 
-Module Type Classifier.
-    Declare Module F : FeatureSig.
-    Include ClassifierOn F.N F.
-End Classifier.
+Module Type Classifier := FeatureSig <+ Output <+ ClassifierOn.
 
 
-Module Type ClassifierInstance (N : FinSig) (F : FeatureSigOn N) (C : ClassifierOn N F).
+Module Type ClassifierInstance (F : FeatureSig) (O : Output) (C : ClassifierOn F O).
     Parameter k : C.t.
     Parameter v : featureVec F.fs.
 End ClassifierInstance.
 
-Module Type ExplanationProblem := FinSig <+ FeatureSigOn <+ ClassifierOn <+ ClassifierInstance.
+Module Type ExplanationProblem := FeatureSig <+ Output <+ ClassifierOn <+ ClassifierInstance.
 
 
-Module Explanations (Export E : ExplanationProblem).
+Module Explanations (Import E : ExplanationProblem).
+
+    Module Import FDefs := FeatureSigDefs E.
 
     Definition WCXp (X : S.t) : Prop :=
         exists (v' : featureVec fs), equiv (S.compl X) v v' /\ eval k v <> eval k v'.
@@ -96,11 +99,10 @@ Module Explanations (Export E : ExplanationProblem).
 End Explanations.
 
 
-Module ExplanationsFacts (Export E : ExplanationProblem).
+Module ExplanationsFacts (Import E : ExplanationProblem).
 
-    Module Xp := Explanations E.
-    Import Xp.
-
+    Module Import Xp := Explanations E.
+    Import Xp.FDefs.
 
     (* Monotonicity *)
 
@@ -201,17 +203,22 @@ Module ExplanationsFacts (Export E : ExplanationProblem).
 End ExplanationsFacts.
 
 
-Module Type Explainer (Export E : ExplanationProblem).
+Module Type Explainer (E : ExplanationProblem).
+    Module Xp := Explanations E.
+    Import Xp.FDefs.
+    
     Parameter getNew : list S.t -> S.t.
 End Explainer.
 
 Module DummyExplainer (E : ExplanationProblem) : Explainer E.
-    Definition getNew (l : list E.S.t) := E.S.empty.
+    Module Xp := Explanations E.
+    Import Xp.FDefs.
+
+    Definition getNew (l : list S.t) := S.empty.
 End DummyExplainer.
 
-Module Type CorrectExplainer (E : ExplanationProblem) <: Explainer E.
 
-    Module Xp := Explanations E.
+Module Type CorrectExplainer (E : ExplanationProblem) <: Explainer E.
     Include Explainer E.
 
     Axiom getNewSound :
