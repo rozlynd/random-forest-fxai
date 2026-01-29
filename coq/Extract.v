@@ -3,7 +3,7 @@ Require List.
 
 From RFXP Require Import Utils Features Xp DT RF.
 
-Set Extraction Output Directory "../ocaml/lib".
+Set Extraction Output Directory "../ocaml/lib/extracted".
 
 Extraction Blacklist List String.
 
