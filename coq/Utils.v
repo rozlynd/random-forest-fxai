@@ -236,10 +236,12 @@ Section Fin.
 
 End Fin.
 
+
 Module Type FinSig.
     Parameter n : nat.
 End FinSig.
 
+(* definitions of compare and eq_dec not extracted? mysterious *)
 Module FinOT (S : FinSig) : UsualOrderedType
     with Definition t := fin S.n.
 
@@ -251,15 +253,15 @@ Module FinOT (S : FinSig) : UsualOrderedType
     Program Instance eq_equiv : Equivalence eq.
 
     Program Instance lt_irreflexive : Irreflexive lt.
-    Next Obligation. unfold lt; intros p H; lia. Qed.
+    Next Obligation. unfold lt; intros p H; lia. Defined.
 
     Program Instance lt_transitive : Transitive lt.
-    Next Obligation. unfold lt in *; lia. Qed.
+    Next Obligation. unfold lt in *; lia. Defined.
 
     Program Instance lt_strorder : StrictOrder lt.
 
     Program Instance lt_compat : Proper (eq ==> eq ==> iff) lt.
-    Next Obligation. unfold lt; intros m m' Hm p p' Hp; now rewrite Hm, Hp. Qed.
+    Next Obligation. unfold lt; intros m m' Hm p p' Hp; now rewrite Hm, Hp. Defined.
 
 
     Theorem compare_spec (m p : fin S.n) : CompareSpec (m = p) (lt m p) (lt p m) (compare m p).
@@ -268,14 +270,14 @@ Module FinOT (S : FinSig) : UsualOrderedType
         assert (H := PeanoNat.Nat.compare_spec (to_nat m) (to_nat p));
         inversion H as [HEq | HLt | HGt]; clear H; constructor;
         try assumption; now apply to_nat_inj.
-    Qed.
+    Defined.
 
     Definition eq_dec (m p : fin S.n) : { m = p } + { m <> p }.
     Proof.
         destruct (PeanoNat.Nat.eq_dec (to_nat m) (to_nat p)) as [HEq | HNeq].
         -   left; now apply to_nat_inj.
         -   right; intro abs; now rewrite abs in HNeq.
-    Qed.
+    Defined.
 
 End FinOT.
 
@@ -285,12 +287,27 @@ Module FinOTF (S : FinSig) : UsualOrderedTypeFull
     #[warnings="-parsing"] Include OT_to_Full FOT.
 End FinOTF.
 
-Module FinSet (S : FinSig) <: Sets
+
+Module Type FinSet (S : FinSig) <: Sets
     with Definition E.t := fin S.n
     with Definition E.eq := @Logic.eq (fin S.n).
+
+    Include Sets
+        with Definition E.t := fin S.n
+        with Definition E.eq := @Logic.eq (fin S.n).
+
+    Parameter all : t.
+    Parameter compl : t -> t.
+
+    Axiom In_all : forall (i : elt), In i all.
+    Axiom In_compl : forall (s : t) (i : elt), In i (compl s) <-> ~ In i s.
+
+End FinSet.
+
+Module MakeFinSet (S : FinSig) <: FinSet S.
+
     Module X := FinOT S.
     Include MSetList.Make X.
-
 
     Local Program Fixpoint all_below (n : nat) : t + { ~ n <= S.n } :=
         match n with
@@ -352,16 +369,12 @@ Module FinSet (S : FinSig) <: Sets
         split; intros H abs; now apply H, HEs.
     Qed.
 
-End FinSet.
+End MakeFinSet.
 
-Module FinSetProperties (S : FinSig).
-    Module FOT := FinOTF S.
-    Module FS := FinSet S.
+Module FinSetProperties (S : FinSig) (Import FS : FinSet S).
+    
     Module P := OrdProperties FS.
-    Module P' := MSets.MSetFacts.WFactsOn FOT FS.
-    Import P P.P P'.
-
-    Import FS.
+    Import P P.P.
 
     Theorem compl_compl : forall (s : t), Equal (compl (compl s)) s.
     Proof.
@@ -382,6 +395,7 @@ Module FinSetProperties (S : FinSig).
     Qed.
 
 End FinSetProperties.
+
 
 (* a reflexivity proof in Feature breaks if I remove this?? *)
 Export StringSetMoreProperties.

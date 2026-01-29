@@ -12,8 +12,7 @@ Module Type FeatureSig := FinSig <+ FeatureSigOn.
 
 Module FeatureSigDefs (F : FeatureSig).
 
-    Module FinSetProps := FinSetProperties F.
-    Module S := FinSetProps.FS.
+    Module S := MakeFinSet F.
 
     Definition equiv (X : S.t) (v1 v2 : featureVec F.fs) : Prop :=
         forall (i : fin F.n), S.In i X -> getValue' v1 i = getValue' v2 i.
@@ -47,9 +46,9 @@ End ClassifierInstance.
 Module Type ExplanationProblem := FeatureSig <+ Output <+ ClassifierOn <+ ClassifierInstance.
 
 
-Module Explanations (Import E : ExplanationProblem).
+Module ExplanationsDefs (Import E : ExplanationProblem).
 
-    Module Import FDefs := FeatureSigDefs E.
+    Include FeatureSigDefs E.
 
     Definition WCXp (X : S.t) : Prop :=
         exists (v' : featureVec fs), equiv (S.compl X) v v' /\ eval k v <> eval k v'.
@@ -63,10 +62,26 @@ Module Explanations (Import E : ExplanationProblem).
     Definition AXp (X : S.t) : Prop :=
         WAXp X /\ forall X', S.Subset X' X -> WAXp X' -> S.Equal X' X.
 
-    Inductive Xp (X : S.t) : Type :=
-    | isAXp : AXp X -> Xp X
-    | isCXp : CXp X -> Xp X.
+    
+    (* Definitions for typing explainers *)
 
+    Variant Xp : Type :=
+    | isAXp (X : S.t) : Xp
+    | isCXp (X : S.t) : Xp.
+
+    Definition isXp (X : Xp) : Prop :=
+        match X with
+        | isAXp X => AXp X
+        | isCXp X => CXp X
+        end.
+
+End ExplanationsDefs.
+
+
+Module ExplanationsFacts (E : ExplanationProblem).
+
+    Module Import Xp := ExplanationsDefs E.
+    Module P := FinSetProperties E Xp.S.
 
     Global Instance WCXp_compat : Proper (S.Equal ==> iff) WCXp.
     Proof.
@@ -96,13 +111,6 @@ Module Explanations (Import E : ExplanationProblem).
         try (rewrite <- HEs; now apply H2).
     Qed.
 
-End Explanations.
-
-
-Module ExplanationsFacts (Import E : ExplanationProblem).
-
-    Module Import Xp := Explanations E.
-    Import Xp.FDefs.
 
     (* Monotonicity *)
 
@@ -111,7 +119,7 @@ Module ExplanationsFacts (Import E : ExplanationProblem).
     Proof.
         intros X1 X2 HSubs (v' & HEq & HDiff);
         exists v'; split; try (now apply HDiff);
-        intros i Hi; apply FinSetProps.Subset_compl in HSubs;
+        intros i Hi; apply P.Subset_compl in HSubs;
         now apply HEq, HSubs.
     Qed.
 
@@ -132,8 +140,8 @@ Module ExplanationsFacts (Import E : ExplanationProblem).
                 -> CXp X.
     Proof.
         intros X (isWCXp & removeOneNotWCXp); split; try assumption;
-        intros X' HSubs isWCXp'; apply FinSetProps.P.P.subset_antisym; try assumption;
-        intros i Hi; destruct (FinSetProps.P.P.In_dec i X') as [| HN ]; try assumption;
+        intros X' HSubs isWCXp'; apply P.P.P.subset_antisym; try assumption;
+        intros i Hi; destruct (P.P.P.In_dec i X') as [| HN ]; try assumption;
         exfalso; apply removeOneNotWCXp with (i := i); try assumption;
         apply WCXp_monotonic with (X1 := X'); try assumption;
         intros j Hj; apply S.remove_spec; split; try (now apply HSubs);
@@ -146,8 +154,8 @@ Module ExplanationsFacts (Import E : ExplanationProblem).
                 -> AXp X.
     Proof.
         intros X (isWAXp & removeOneNotWAXp); split; try assumption;
-        intros X' HSubs isWAXp'; apply FinSetProps.P.P.subset_antisym; try assumption;
-        intros i Hi; destruct (FinSetProps.P.P.In_dec i X') as [| HN ]; try assumption;
+        intros X' HSubs isWAXp'; apply P.P.P.subset_antisym; try assumption;
+        intros i Hi; destruct (P.P.P.In_dec i X') as [| HN ]; try assumption;
         exfalso; apply removeOneNotWAXp with (i := i); try assumption;
         apply WAXp_monotonic with (X1 := X'); try assumption;
         intros j Hj; apply S.remove_spec; split; try (now apply HSubs);
@@ -162,7 +170,7 @@ Module ExplanationsFacts (Import E : ExplanationProblem).
     Proof.
         intros X; split; intro H.
         -   intros v' Heq;
-            destruct (K.eq_dec (eval k v) (eval k v')); try assumption;
+            destruct (E.K.eq_dec (E.eval E.k E.v) (E.eval E.k v')); try assumption;
             exfalso; apply H; exists v'; split; assumption.
         -   intros (v' & H1 & H2); apply H2, H, H1.
     Qed.
@@ -185,7 +193,7 @@ Module ExplanationsFacts (Import E : ExplanationProblem).
     Proof.
         intros X;
         assert (H := XpDual_compl_of_not_WCXp_is_WAXp (S.compl X));
-        now rewrite FinSetProps.compl_compl in H.
+        now rewrite P.compl_compl in H.
     Qed.
 
     Theorem XpDual_uncompl_of_WCXp_is_not_WAXp :
@@ -204,28 +212,31 @@ End ExplanationsFacts.
 
 
 Module Type Explainer (E : ExplanationProblem).
-    Module Xp := Explanations E.
-    Import Xp.FDefs.
-    
-    Parameter getNew : list S.t -> S.t.
+    Module Import Xp := ExplanationsDefs E.
+
+    Parameter getNew : list Xp -> Xp.
 End Explainer.
 
-Module DummyExplainer (E : ExplanationProblem) : Explainer E.
-    Module Xp := Explanations E.
-    Import Xp.FDefs.
-
-    Definition getNew (l : list S.t) := S.empty.
-End DummyExplainer.
-
-
-Module Type CorrectExplainer (E : ExplanationProblem) <: Explainer E.
+Module Type SoundExplainer (E : ExplanationProblem) <: Explainer E.
     Include Explainer E.
 
     Axiom getNewSound :
-        forall Xs, Xp.Xp (getNew Xs).
+        forall Xs, Xp.isXp (getNew Xs).
+
+End SoundExplainer.
+
+Module Type CorrectExplainer (E : ExplanationProblem) <: SoundExplainer E.
+    Include SoundExplainer E.
 
     Axiom getNewComplete :
         forall Xs, List.In (getNew Xs) Xs ->
-            forall X, Xp.Xp X -> List.In X Xs.
-
+            forall X, Xp.isXp X -> List.In X Xs.
+            
 End CorrectExplainer.
+
+
+Module DummyExplainer (E : ExplanationProblem) : Explainer E.
+    Module Import Xp := ExplanationsDefs E.
+
+    Definition getNew (l : list Xp) := isAXp S.all.
+End DummyExplainer.

@@ -11,4 +11,4 @@ Extraction Language OCaml.
 Separate Extraction
     StringOT to_nat to_fin'
     boolean_feature float_feature string_enum_feature enum_feature
-    MakeDT MakeRF.
+    DummyExplainer MakeDT MakeRF.
