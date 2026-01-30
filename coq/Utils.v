@@ -288,7 +288,7 @@ Module FinOTF (S : FinSig) : UsualOrderedTypeFull
 End FinOTF.
 
 
-Module Type FinSet (S : FinSig) <: Sets
+Module Type FinSetOn (S : FinSig) <: Sets
     with Definition E.t := fin S.n
     with Definition E.eq := @Logic.eq (fin S.n).
 
@@ -304,9 +304,11 @@ Module Type FinSet (S : FinSig) <: Sets
 
     Global Parameter compl_compat : Proper (Equal ==> Equal) compl.
 
-End FinSet.
+End FinSetOn.
 
-Module MakeFinSet (S : FinSig) : FinSet S.
+Module Type FinSet := FinSig <+ FinSetOn.
+
+Module MakeFinSet (S : FinSig) : FinSetOn S.
 
     Module X := FinOT S.
     Include MSetList.Make X.
@@ -373,7 +375,7 @@ Module MakeFinSet (S : FinSig) : FinSet S.
 
 End MakeFinSet.
 
-Module FinSetProperties (S : FinSig) (Import FS : FinSet S).
+Module FinSetProperties (Import FS : FinSet).
     
     Module P := OrdProperties FS.
     Import P P.P.

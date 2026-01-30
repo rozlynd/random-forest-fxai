@@ -9,6 +9,7 @@ Extraction Blacklist List String.
 
 Extraction Language OCaml.
 Separate Extraction
-    StringOT to_nat to_fin'
+    StringOT to_nat to_fin' MakeFinSet
     boolean_feature float_feature string_enum_feature enum_feature
-    DummyExplainer MakeDT MakeRF.
+    MakeDT MakeRF
+    (*MakeInputProblem*) DummyExplainer.

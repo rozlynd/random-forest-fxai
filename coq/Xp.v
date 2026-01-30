@@ -10,7 +10,7 @@ End FeatureSigOn.
 Module Type FeatureSig := FinSig <+ FeatureSigOn.
 
 
-Module FeatureSigDefs (F : FeatureSig) (S : FinSet F).
+Module FeatureSigDefs (F : FeatureSig) (S : FinSetOn F).
 
     Definition equiv (X : S.t) (v1 v2 : featureVec F.fs) : Prop :=
         forall (i : fin F.n), S.In i X -> getValue' v1 i = getValue' v2 i.
@@ -43,8 +43,19 @@ End ClassifierInstance.
 
 Module Type ExplanationProblem := FeatureSig <+ Output <+ ClassifierOn <+ ClassifierInstance.
 
+(* This is expressed in such a way the extracted interface looks nice *)
+Module Type InputProblem <: ExplanationProblem.
+    Include ExplanationProblem.
+    Declare Module S : FinSet with Definition n := n.
+End InputProblem.
 
-Module ExplanationsDefs (Import E : ExplanationProblem) (S : FinSet E).
+(*Module MakeInputProblem (E : ExplanationProblem).
+    Include E.
+    Module S := MakeFinSet E.
+End MakeInputProblem.*)
+
+
+Module ExplanationsDefs (Import E : InputProblem).
 
     Include FeatureSigDefs E S.
 
@@ -76,10 +87,10 @@ Module ExplanationsDefs (Import E : ExplanationProblem) (S : FinSet E).
 End ExplanationsDefs.
 
 
-Module ExplanationsFacts (E : ExplanationProblem) (S : FinSet E).
+Module ExplanationsFacts (Import E : InputProblem).
 
-    Module Import Xp := ExplanationsDefs E S.
-    Module P := FinSetProperties E S.
+    Module Import Xp := ExplanationsDefs E.
+    Module P := FinSetProperties E.S.
 
     Instance compl_compat : Proper (S.Equal ==> S.Equal) S.compl := S.compl_compat.
 
@@ -211,22 +222,22 @@ Module ExplanationsFacts (E : ExplanationProblem) (S : FinSet E).
 End ExplanationsFacts.
 
 
-Module Type Explainer (E : ExplanationProblem) (S : FinSet E).
-    Module Import Xp := ExplanationsDefs E S.
+Module Type Explainer (E : InputProblem).
+    Module Import Xp := ExplanationsDefs E.
 
     Parameter getNew : list Xp -> Xp.
 End Explainer.
 
-Module Type SoundExplainer (E : ExplanationProblem) (S : FinSet E) <: Explainer E S.
-    Include Explainer E S.
+Module Type SoundExplainer (E : InputProblem) <: Explainer E.
+    Include Explainer E.
 
     Axiom getNewSound :
         forall Xs, Xp.isXp (getNew Xs).
 
 End SoundExplainer.
 
-Module Type CorrectExplainer (E : ExplanationProblem) (S : FinSet E) <: SoundExplainer E S.
-    Include SoundExplainer E S.
+Module Type CorrectExplainer (E : InputProblem) <: SoundExplainer E.
+    Include SoundExplainer E.
 
     Axiom getNewComplete :
         forall Xs, List.In (getNew Xs) Xs ->
@@ -235,8 +246,8 @@ Module Type CorrectExplainer (E : ExplanationProblem) (S : FinSet E) <: SoundExp
 End CorrectExplainer.
 
 
-Module DummyExplainer (E : ExplanationProblem) (S : FinSet E) : Explainer E S.
-    Module Import Xp := ExplanationsDefs E S.
+Module DummyExplainer (E : InputProblem) : Explainer E.
+    Module Import Xp := ExplanationsDefs E.
 
-    Definition getNew (l : list Xp) := isAXp S.all.
+    Definition getNew (l : list Xp) := isAXp E.S.all.
 End DummyExplainer.
