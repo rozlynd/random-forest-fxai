@@ -302,9 +302,11 @@ Module Type FinSet (S : FinSig) <: Sets
     Axiom In_all : forall (i : elt), In i all.
     Axiom In_compl : forall (s : t) (i : elt), In i (compl s) <-> ~ In i s.
 
+    Global Parameter compl_compat : Proper (Equal ==> Equal) compl.
+
 End FinSet.
 
-Module MakeFinSet (S : FinSig) <: FinSet S.
+Module MakeFinSet (S : FinSig) : FinSet S.
 
     Module X := FinOT S.
     Include MSetList.Make X.
