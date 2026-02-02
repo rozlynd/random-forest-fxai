@@ -98,6 +98,43 @@ Section ListInit.
 
 End ListInit.
 
+Section ListMisc.
+
+    Theorem existsb_nexists : forall (A : Type) (f : A -> bool) (l : list A),
+        existsb f l = false <-> forall x, In x l -> f x = false.
+    Proof.
+        intros A f l; split.
+        -   intros H1 x H2; destruct (f x) eqn:Heq; try reflexivity;
+            cut (existsb f l = true);
+                [ intro abs; rewrite abs in H1; discriminate |];
+            apply existsb_exists; now exists x.
+        -   intros H; destruct (existsb f l) eqn:Heq; try reflexivity;
+            apply existsb_exists in Heq as (x & H1 & H2);
+            rewrite (H _ H1) in H2; discriminate.
+    Qed.
+
+    Theorem forallb_nforall : forall (A : Type) (f : A -> bool) (l : list A),
+        forallb f l = false <-> exists x, In x l /\ f x = false.
+    Proof.
+        intros A f l; split.
+        -   intros H; induction l as [| x l IH ]; try (now inversion H);
+            apply andb_false_iff in H as [Hf | Hind].
+            +   exists x; split; [now left | apply Hf].
+            +   destruct IH as (y & H); try apply Hind;
+                exists y; split; [now right | apply H].
+        -   intros (x & H1 & H2);
+            destruct (forallb f l) eqn:Heq; try reflexivity;
+            rewrite forallb_forall in Heq;
+            now rewrite Heq in H2.
+    Qed.
+
+
+    Theorem filter_map_swap : forall (A B : Type) (f : A -> B) (p : B -> bool) (l : list A),
+        filter p (map f l) = map f (filter (fun x => p (f x)) l).
+    Admitted.
+
+End ListMisc.
+
 
 (* Non-empty lists *)
 
