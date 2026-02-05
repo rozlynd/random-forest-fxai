@@ -17,6 +17,11 @@ module StringSet = Make(StringOT)
 type 'a nelist =
 | Coq_necons of 'a * 'a list
 
+(** val nemap : ('a1 -> 'a2) -> 'a1 nelist -> 'a2 nelist **)
+
+let nemap f = function
+| Coq_necons (x, q) -> Coq_necons ((f x), (map f q))
+
 type fin =
 | F1 of int
 | FS of int * fin

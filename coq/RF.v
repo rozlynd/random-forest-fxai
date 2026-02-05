@@ -28,10 +28,12 @@ Module MakeRF (F : FeatureSig) (O : RFOutput) <: RFOn F O.
 
     Definition t := nelist Dt.t.
 
-    Definition eval (rf : t) (x : featureVec F.fs) : O.K.t :=
-        match rf with
-        | necons dt dts =>
-            KVoting.vote (Dt.eval dt x) (map (fun dt => Dt.eval dt x) dts)
+    Definition decide (l : nelist O_dt.K.t) :=
+        match l with
+        | necons x q => KVoting.vote x q
         end.
+
+    Definition eval (rf : t) (x : featureVec F.fs) : O.K.t :=
+        decide (nemap (fun dt => Dt.eval dt x) rf).
 
 End MakeRF.

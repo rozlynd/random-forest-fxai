@@ -69,7 +69,12 @@ Module Type TreeEnsembleOn (F : FeatureSig) (O : Output) <: ClassifierOn F O.
 
     Declare Module O_dt : Output.
     Declare Module Dt : DTOn F O_dt.
-    Include ClassifierOn F O with Definition t := nelist Dt.t.
+    
+    Parameter decide : nelist O_dt.K.t -> O.K.t.
+
+    Include ClassifierOn F O
+        with Definition t := nelist Dt.t
+        with Definition eval := fun dts v => decide (nemap (fun dt => Dt.eval dt v) dts).
 
 End TreeEnsembleOn.
 

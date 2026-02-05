@@ -1,7 +1,6 @@
 open DT
 open Datatypes
 open Features
-open List0
 open Orders
 open Utils
 open Xp
@@ -29,9 +28,13 @@ module MakeRF =
 
   type t = Dt.t nelist
 
+  (** val decide : O_dt.K.t nelist -> O.K.t **)
+
+  let decide = function
+  | Coq_necons (x, q) -> KVoting.vote x q
+
   (** val eval : t -> featureVec -> O.K.t **)
 
   let eval rf x =
-    let Coq_necons (dt0, dts) = rf in
-    KVoting.vote (Dt.eval dt0 x) (map (fun dt1 -> Dt.eval dt1 x) dts)
+    decide (nemap (fun dt0 -> Dt.eval dt0 x) rf)
  end

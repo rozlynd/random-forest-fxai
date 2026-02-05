@@ -18,6 +18,8 @@ module StringSet :
 type 'a nelist =
 | Coq_necons of 'a * 'a list
 
+val nemap : ('a1 -> 'a2) -> 'a1 nelist -> 'a2 nelist
+
 type fin =
 | F1 of int
 | FS of int * fin

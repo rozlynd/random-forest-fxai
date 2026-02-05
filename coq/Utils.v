@@ -149,6 +149,17 @@ End NonEmptyList.
 
 Arguments necons {A}.
 
+Section NonEmptyListMap.
+
+    Context {A B : Type} (f : A -> B).
+
+    Definition nemap (l : nelist A) : nelist B :=
+        match l with
+        | necons x q => necons (f x) (map f q)
+        end.
+
+End NonEmptyListMap.
+
 
 (* Finite types *)
 

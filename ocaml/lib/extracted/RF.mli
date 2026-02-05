@@ -1,7 +1,6 @@
 open DT
 open Datatypes
 open Features
-open List0
 open Orders
 open Utils
 open Xp
@@ -37,6 +36,8 @@ module MakeRF :
    end
 
   type t = Dt.t nelist
+
+  val decide : O_dt.K.t nelist -> O.K.t
 
   val eval : t -> featureVec -> O.K.t
  end
