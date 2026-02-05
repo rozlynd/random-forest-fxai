@@ -50,24 +50,12 @@ Section CNFSatisfiabilityDefs.
         | inr c => eval_cardinality_constraint c
         end.
 
-    Definition eval_cnf (c : cnf V) : bool :=
+    Definition eval_cnf_with_cc (c : cnf_with_cc V) : bool :=
         forallb eval_constraint c.
 
 End CNFSatisfiabilityDefs.
 
 Arguments assignment V : clear implicits.
-
-Section CNFValidityDefs.
-
-    Variable V : Type.
-
-    Definition SAT (c : cnf V) : Prop :=
-        exists (I : assignment V), eval_cnf I c = true.
-
-    Definition UNSAT (c : cnf V) : Prop :=
-        forall (I : assignment V), eval_cnf I c = false.
-
-End CNFValidityDefs.
 
 
 Section CNFMap.
