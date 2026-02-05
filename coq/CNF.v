@@ -161,37 +161,17 @@ Section CNFMapSatisfiabilityFacts.
     Theorem map_cnf_with_cc_eval : forall (c : cnf_with_cc U),
         eval_cnf_with_cc I (map_cnf_with_cc f f_inj c) = eval_cnf_with_cc (map_assignment f I) c.
     Proof.
-        intros c; unfold eval_cnf_with_cc;
-        destruct (forallb (eval_constraint I) (map_cnf_with_cc f f_inj c)) eqn:H1;
-        destruct (forallb (eval_constraint (map_assignment f I)) c) eqn:H2;
-        try reflexivity.
-        -   rewrite forallb_forall in H1; rewrite forallb_nforall in H2;
-            destruct H2 as (x & H2 & H3);
-            rewrite <- map_constraint_eval, H1 in H3;
-            try discriminate; now apply in_map.
-        -   rewrite forallb_nforall in H1; rewrite forallb_forall in H2;
-            destruct H1 as (x & H1 & H3);
-            apply in_map_iff in H1 as (y & H4 & H5);
-            rewrite <- H4, map_constraint_eval, H2 in H3;
-            try discriminate; now apply H5.
+        intros c; unfold eval_cnf_with_cc, map_cnf_with_cc;
+        rewrite forallb_map; apply forallb_ext;
+        intros; now rewrite map_constraint_eval.
     Qed.
 
     Theorem map_cnf_eval : forall (c : cnf U),
         eval_cnf I (map_cnf f f_inj c) = eval_cnf (map_assignment f I) c.
     Proof.
-        intros c; unfold eval_cnf;
-        destruct (forallb (eval_clause I) (map_cnf f f_inj c)) eqn:H1;
-        destruct (forallb (eval_clause (map_assignment f I)) c) eqn:H2;
-        try reflexivity.
-        -   rewrite forallb_forall in H1; rewrite forallb_nforall in H2;
-            destruct H2 as (x & H2 & H3);
-            rewrite <- map_clause_eval, H1 in H3;
-            try discriminate; now apply in_map.
-        -   rewrite forallb_nforall in H1; rewrite forallb_forall in H2;
-            destruct H1 as (x & H1 & H3);
-            apply in_map_iff in H1 as (y & H4 & H5);
-            rewrite <- H4, map_clause_eval, H2 in H3;
-            try discriminate; now apply H5.
+        intros c; unfold eval_cnf, map_cnf;
+        rewrite forallb_map; apply forallb_ext;
+        intros; now rewrite map_clause_eval.
     Qed.
 
 End CNFMapSatisfiabilityFacts.

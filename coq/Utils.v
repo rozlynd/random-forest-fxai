@@ -100,30 +100,54 @@ End ListInit.
 
 Section ListMisc.
 
-    Theorem existsb_nexists : forall (A : Type) (f : A -> bool) (l : list A),
-        existsb f l = false <-> forall x, In x l -> f x = false.
+    Theorem forallb_map : forall (A B : Type) (f : A -> B) (p : B -> bool) (l : list A),
+        forallb p (map f l) = forallb (fun x => p (f x)) l.
     Proof.
-        intros A f l; split.
-        -   intros H1 x H2; destruct (f x) eqn:Heq; try reflexivity;
-            cut (existsb f l = true);
+        intros; induction l as [| x l IH ]; now simpl; rewrite ? IH.
+    Qed.
+
+    Theorem existsb_map : forall (A B : Type) (f : A -> B) (p : B -> bool) (l : list A),
+        existsb p (map f l) = existsb (fun x => p (f x)) l.
+    Proof.
+        intros; induction l as [| x l IH ]; now simpl; rewrite ? IH.
+    Qed.
+
+    Theorem forallb_ext : forall (A : Type) (p q : A -> bool) (l : list A),
+        (forall x, p x = q x) -> forallb p l = forallb q l.
+    Proof.
+        intros; induction l as [| x l IH ]; now simpl; rewrite ? H, ? IH.
+    Qed.
+
+    Theorem existsb_ext : forall (A : Type) (p q : A -> bool) (l : list A),
+        (forall x, p x = q x) -> existsb p l = existsb q l.
+    Proof.
+        intros; induction l as [| x l IH ]; now simpl; rewrite ? H, ? IH.
+    Qed.
+
+    Theorem existsb_nexists : forall (A : Type) (p : A -> bool) (l : list A),
+        existsb p l = false <-> forall x, In x l -> p x = false.
+    Proof.
+        intros A p l; split.
+        -   intros H1 x H2; destruct (p x) eqn:Heq; try reflexivity;
+            cut (existsb p l = true);
                 [ intro abs; rewrite abs in H1; discriminate |];
             apply existsb_exists; now exists x.
-        -   intros H; destruct (existsb f l) eqn:Heq; try reflexivity;
+        -   intros H; destruct (existsb p l) eqn:Heq; try reflexivity;
             apply existsb_exists in Heq as (x & H1 & H2);
             rewrite (H _ H1) in H2; discriminate.
     Qed.
 
-    Theorem forallb_nforall : forall (A : Type) (f : A -> bool) (l : list A),
-        forallb f l = false <-> exists x, In x l /\ f x = false.
+    Theorem forallb_nforall : forall (A : Type) (p : A -> bool) (l : list A),
+        forallb p l = false <-> exists x, In x l /\ p x = false.
     Proof.
-        intros A f l; split.
+        intros A p l; split.
         -   intros H; induction l as [| x l IH ]; try (now inversion H);
-            apply andb_false_iff in H as [Hf | Hind].
-            +   exists x; split; [now left | apply Hf].
+            apply andb_false_iff in H as [Hp | Hind].
+            +   exists x; split; [now left | apply Hp].
             +   destruct IH as (y & H); try apply Hind;
                 exists y; split; [now right | apply H].
         -   intros (x & H1 & H2);
-            destruct (forallb f l) eqn:Heq; try reflexivity;
+            destruct (forallb p l) eqn:Heq; try reflexivity;
             rewrite forallb_forall in Heq;
             now rewrite Heq in H2.
     Qed.
