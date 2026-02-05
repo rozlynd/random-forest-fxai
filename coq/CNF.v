@@ -108,8 +108,8 @@ Section CNFMap.
     Definition map_cnf : cnf U -> cnf V :=
         map map_constraint.
 
-    Definition map_assignment (I : assignment V) : assignment U :=
-        fun x => I (f x).
+    Definition map_assignment : assignment V -> assignment U :=
+        fun I x => I (f x).
 
 End CNFMap.
 
