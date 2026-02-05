@@ -15,7 +15,9 @@ Section CNFDefs.
 
     Definition cardinality_constraint := prod { l : list literal | NoDup l } nat.
 
-    Definition cnf := list (sum clause cardinality_constraint).
+    Definition cnf_with_cc := list (sum clause cardinality_constraint).
+
+    Definition cnf := list clause.
 
 End CNFDefs.
 
@@ -52,6 +54,9 @@ Section CNFSatisfiabilityDefs.
 
     Definition eval_cnf_with_cc (c : cnf_with_cc V) : bool :=
         forallb eval_constraint c.
+
+    Definition eval_cnf (c : cnf V) : bool :=
+        forallb eval_clause c.
 
 End CNFSatisfiabilityDefs.
 
@@ -93,8 +98,11 @@ Section CNFMap.
         | inr c => inr (map_cardinality_constraint c)
         end.
 
-    Definition map_cnf : cnf U -> cnf V :=
+    Definition map_cnf_with_cc : cnf_with_cc U -> cnf_with_cc V :=
         map map_constraint.
+
+    Definition map_cnf : cnf U -> cnf V :=
+        map map_clause.
 
     Definition map_assignment : assignment V -> assignment U :=
         fun I x => I (f x).
@@ -150,11 +158,11 @@ Section CNFMapSatisfiabilityFacts.
             eval_constraint (map_assignment f I) c.
     Proof. intros [|]; [apply map_clause_eval | apply map_cardinality_constraint_eval]. Qed.
 
-    Theorem map_cnf_eval : forall (c : cnf U),
-        eval_cnf I (map_cnf f f_inj c) = eval_cnf (map_assignment f I) c.
+    Theorem map_cnf_with_cc_eval : forall (c : cnf_with_cc U),
+        eval_cnf_with_cc I (map_cnf_with_cc f f_inj c) = eval_cnf_with_cc (map_assignment f I) c.
     Proof.
-        intros c; unfold eval_cnf;
-        destruct (forallb (eval_constraint I) (map_cnf f f_inj c)) eqn:H1;
+        intros c; unfold eval_cnf_with_cc;
+        destruct (forallb (eval_constraint I) (map_cnf_with_cc f f_inj c)) eqn:H1;
         destruct (forallb (eval_constraint (map_assignment f I)) c) eqn:H2;
         try reflexivity.
         -   rewrite forallb_forall in H1; rewrite forallb_nforall in H2;
@@ -165,6 +173,24 @@ Section CNFMapSatisfiabilityFacts.
             destruct H1 as (x & H1 & H3);
             apply in_map_iff in H1 as (y & H4 & H5);
             rewrite <- H4, map_constraint_eval, H2 in H3;
+            try discriminate; now apply H5.
+    Qed.
+
+    Theorem map_cnf_eval : forall (c : cnf U),
+        eval_cnf I (map_cnf f f_inj c) = eval_cnf (map_assignment f I) c.
+    Proof.
+        intros c; unfold eval_cnf;
+        destruct (forallb (eval_clause I) (map_cnf f f_inj c)) eqn:H1;
+        destruct (forallb (eval_clause (map_assignment f I)) c) eqn:H2;
+        try reflexivity.
+        -   rewrite forallb_forall in H1; rewrite forallb_nforall in H2;
+            destruct H2 as (x & H2 & H3);
+            rewrite <- map_clause_eval, H1 in H3;
+            try discriminate; now apply in_map.
+        -   rewrite forallb_nforall in H1; rewrite forallb_forall in H2;
+            destruct H1 as (x & H1 & H3);
+            apply in_map_iff in H1 as (y & H4 & H5);
+            rewrite <- H4, map_clause_eval, H2 in H3;
             try discriminate; now apply H5.
     Qed.
 
