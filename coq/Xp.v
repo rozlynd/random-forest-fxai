@@ -222,6 +222,42 @@ Module ExplanationsFacts (Import E : InputProblem).
 End ExplanationsFacts.
 
 
+Module Type AXpFinder (E : InputProblem).
+    Module Import Xp := ExplanationsDefs E.
+
+    Parameter findAXp : E.S.t -> E.S.t.
+End AXpFinder.
+
+Module Type SoundAXpFinder (E : InputProblem) <: AXpFinder E.
+    Include AXpFinder E.
+
+    Axiom findAXpSound :
+        forall X, Xp.WAXp X -> Xp.AXp (findAXp X).
+
+    Axiom findAXpSane :
+        forall X, E.S.Subset (findAXp X) X.
+
+End SoundAXpFinder.
+
+
+Module Type CXpFinder (E : InputProblem).
+    Module Import Xp := ExplanationsDefs E.
+
+    Parameter findCXp : E.S.t -> E.S.t.
+End CXpFinder.
+
+Module Type SoundCXpFinder (E : InputProblem) <: CXpFinder E.
+    Include CXpFinder E.
+
+    Axiom findCXpSound :
+        forall X, Xp.WCXp X -> Xp.CXp (findCXp X).
+
+    Axiom findCXpSane :
+        forall X, E.S.Subset (findCXp X) X.
+
+End SoundCXpFinder.
+
+
 Module Type Explainer (E : InputProblem).
     Module Import Xp := ExplanationsDefs E.
 
