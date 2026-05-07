@@ -49,8 +49,8 @@ module DummyExplainer =
  struct
   module Xp = ExplanationsDefs(E)
 
-  (** val getNew : Xp.coq_Xp list -> Xp.coq_Xp **)
+  (** val getNew : Xp.coq_Xp list -> Xp.coq_Xp option **)
 
   let getNew _ =
-    Xp.Coq_isAXp E.S.all
+    Some (Xp.Coq_isAXp E.S.all)
  end

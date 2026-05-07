@@ -54,5 +54,5 @@ module DummyExplainer :
     | Coq_isCXp of E.S.t
    end
 
-  val getNew : Xp.coq_Xp list -> Xp.coq_Xp
+  val getNew : Xp.coq_Xp list -> Xp.coq_Xp option
  end

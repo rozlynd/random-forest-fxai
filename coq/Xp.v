@@ -261,14 +261,14 @@ End SoundCXpFinder.
 Module Type Explainer (E : InputProblem).
     Module Import Xp := ExplanationsDefs E.
 
-    Parameter getNew : list Xp -> Xp.
+    Parameter getNew : list Xp -> option Xp.
 End Explainer.
 
 Module Type SoundExplainer (E : InputProblem) <: Explainer E.
     Include Explainer E.
 
     Axiom getNewSound :
-        forall Xs, Xp.isXp (getNew Xs).
+        forall Xs X, getNew Xs = Some X -> Xp.isXp X.
 
 End SoundExplainer.
 
@@ -276,8 +276,7 @@ Module Type CorrectExplainer (E : InputProblem) <: SoundExplainer E.
     Include SoundExplainer E.
 
     Axiom getNewComplete :
-        forall Xs, List.In (getNew Xs) Xs ->
-            forall X, Xp.isXp X -> List.In X Xs.
+        forall Xs X, getNew Xs = None -> Xp.isXp X -> List.In X Xs.
             
 End CorrectExplainer.
 
@@ -285,5 +284,5 @@ End CorrectExplainer.
 Module DummyExplainer (E : InputProblem) : Explainer E.
     Module Import Xp := ExplanationsDefs E.
 
-    Definition getNew (l : list Xp) := isAXp E.S.all.
+    Definition getNew (l : list Xp) := Some (isAXp E.S.all).
 End DummyExplainer.
