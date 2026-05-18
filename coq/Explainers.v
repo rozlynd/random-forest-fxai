@@ -1,4 +1,6 @@
-From RFXP Require Import Xp.
+Require Import Bool.
+
+From RFXP Require Import Utils Xp.
 
 (* Base definitions *)
 
@@ -72,6 +74,55 @@ Module Type SoundWCXpChecker (E : InputProblem) <: WCXpChecker E.
         forall X, Bool.reflect (Xp.WCXp X) (checkWCXp X).
 
 End SoundWCXpChecker.
+
+
+Module AXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) : AXpFinder E.
+    Module Import Xp := ExplainersDefs E.
+
+    Program Fixpoint findAXp_aux (X : S.t) (i : nat) : S.t + { S.n < i } :=
+        match i with
+        | 0 => inleft X
+        | S i =>
+            match @to_fin S.n i with
+            | inleft k =>
+                let X' :=
+                    let X' := S.remove k X in
+                    if S.mem k X && negb (Chk.checkWCXp (S.compl X')) then
+                        X'
+                    else
+                        X
+                in
+                match findAXp_aux X' i with
+                | inleft R => inleft R
+                | inright _ => inright _
+                end
+            | inright _ => inright _
+            end
+        end.
+    Solve All Obligations with Lia.lia.
+
+    Program Definition findAXp X :=
+        match findAXp_aux X S.n with
+        | inleft R => R
+        | inright _ => False_rect _ _
+        end.
+    Solve All Obligations with Lia.lia.
+
+End AXpIterativeFinder.
+
+Module SoundAXpIterativeFinder (E : InputProblem) (Chk : SoundWCXpChecker E) : SoundAXpFinder E.
+    Module Impl := AXpIterativeFinder E Chk.
+    Include Impl.
+
+    Theorem findAXpSound :
+        forall X, Xp.WAXp X -> Xp.AXp (findAXp X).
+    Admitted.
+
+    Theorem findAXpSane :
+        forall X, E.S.Subset (findAXp X) X.
+    Admitted.
+
+End SoundAXpIterativeFinder.
 
 
 (* Enumerate all explanations *)
