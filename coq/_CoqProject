@@ -3,6 +3,7 @@
 ./FloatUtils.v
 ./Features.v
 ./Xp.v
+./Explainers.v
 ./Voting.v
 ./DT.v
 ./RF.v

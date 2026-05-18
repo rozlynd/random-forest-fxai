@@ -1,7 +1,7 @@
 Require Extraction ExtrOcamlBasic ExtrOcamlNatInt ExtrOcamlZInt ExtrOCamlFloats ExtrOcamlNativeString.
 Require List.
 
-From RFXP Require Import Utils Features Xp DT RF.
+From RFXP Require Import Utils Features Xp Explainers DT RF.
 
 Set Extraction Output Directory "../ocaml/lib/extracted".
 
