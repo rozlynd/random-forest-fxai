@@ -1,5 +1,6 @@
 From RFXP Require Import Xp.
 
+(* Base definitions *)
 
 Module ExplainersDefs (Import E : InputProblem).
 
@@ -17,6 +18,8 @@ Module ExplainersDefs (Import E : InputProblem).
 
 End ExplainersDefs.
 
+
+(* Find minimal explanations from a seed (eliminate redundant features) *)
 
 Module Type AXpFinder (E : InputProblem).
     Module Import Xp := ExplainersDefs E.
@@ -54,6 +57,8 @@ Module Type SoundCXpFinder (E : InputProblem) <: CXpFinder E.
 End SoundCXpFinder.
 
 
+(* Decide if a set is a WCXp *)
+
 Module Type WCXpChecker (E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
@@ -68,6 +73,8 @@ Module Type SoundWCXpChecker (E : InputProblem) <: WCXpChecker E.
 
 End SoundWCXpChecker.
 
+
+(* Enumerate all explanations *)
 
 Module Type Explainer (E : InputProblem).
     Module Import Xp := ExplainersDefs E.
