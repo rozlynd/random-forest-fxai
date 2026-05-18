@@ -54,6 +54,21 @@ Module Type SoundCXpFinder (E : InputProblem) <: CXpFinder E.
 End SoundCXpFinder.
 
 
+Module Type WCXpChecker (E : InputProblem).
+    Module Import Xp := ExplainersDefs E.
+
+    Parameter checkWCXp : E.S.t -> bool.
+End WCXpChecker.
+
+Module Type SoundWCXpChecker (E : InputProblem) <: WCXpChecker E.
+    Include WCXpChecker E.
+
+    Axiom checkWCXpSound :
+        forall X, Bool.reflect (Xp.WCXp X) (checkWCXp X).
+
+End SoundWCXpChecker.
+
+
 Module Type Explainer (E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
