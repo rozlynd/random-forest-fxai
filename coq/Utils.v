@@ -370,9 +370,19 @@ Module Type FinSetOn (S : FinSig) <: Sets
 
     Parameter all : t.
     Parameter compl : t -> t.
+    Parameter shrink : (t -> bool) -> t -> t.
 
     Axiom In_all : forall (i : elt), In i all.
     Axiom In_compl : forall (s : t) (i : elt), In i (compl s) <-> ~ In i s.
+
+    Axiom shrink_spec1 : forall (p : t -> bool) (s : t),
+        Subset (shrink p s) s.
+
+    Axiom shrink_spec2 : forall (p : t -> bool) (s : t),
+        p s = true -> p (shrink p s) = true.
+
+    Axiom shrink_spec3 : forall (p : t -> bool) (s1 s2 : t),
+        p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).
 
     Global Parameter compl_compat : Proper (Equal ==> Equal) compl.
 
@@ -438,6 +448,49 @@ Module MakeFinSet (S : FinSig) : FinSetOn S.
 
     Theorem In_compl : forall (s : t) (i : elt), In i (compl s) <-> ~ In i s.
     Proof. intros s i; unfold compl; rewrite diff_spec, all_spec; tauto. Qed.
+
+
+    Local Program Fixpoint shrink_aux (p : t -> bool) (s : t) (i : nat) : t + { S.n < i } :=
+        match i with
+        | 0 => inleft s
+        | S i =>
+            match @to_fin S.n i with
+            | inleft k =>
+                let s' :=
+                    let s' := remove k s in
+                    if mem k s && negb (p (compl s')) then
+                        s'
+                    else
+                        s
+                in
+                match shrink_aux p s' i with
+                | inleft r => inleft r
+                | inright _ => inright _
+                end
+            | inright _ => inright _
+            end
+        end.
+    Solve All Obligations with Lia.lia.
+
+    Program Definition shrink p s :=
+        match shrink_aux p s S.n with
+        | inleft r => r
+        | inright _ => False_rect _ _
+        end.
+    Solve All Obligations with Lia.lia.
+
+    Theorem shrink_spec1 : forall (p : t -> bool) (s : t),
+        Subset (shrink p s) s.
+    Admitted.
+
+    Theorem shrink_spec2 : forall (p : t -> bool) (s : t),
+        p s = true -> p (shrink p s) = true.
+    Admitted.
+
+    Theorem shrink_spec3 : forall (p : t -> bool) (s1 s2 : t),
+        p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).
+    Admitted.
+
 
     Global Instance compl_compat : Proper (Equal ==> Equal) compl.
     Proof.

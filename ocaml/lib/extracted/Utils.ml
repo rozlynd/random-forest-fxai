@@ -165,6 +165,8 @@ module type FinSet =
   val all : t
 
   val compl : t -> t
+
+  val shrink : (t -> bool) -> t -> t
  end
 
 module MakeFinSet =
@@ -746,6 +748,49 @@ module MakeFinSet =
   (** val coq_In_compl : __ **)
 
   let coq_In_compl =
+    __
+
+  (** val shrink_aux : (t -> bool) -> t -> int -> t option **)
+
+  let rec shrink_aux p s i =
+    (fun fO fS n -> if n=0 then fO () else fS (n-1))
+      (fun _ -> Some s)
+      (fun i0 ->
+      let filtered_var = to_fin S.n i0 in
+      (match filtered_var with
+       | Some k ->
+         let s' =
+           let s' = remove k s in
+           if (&&) (mem k s) (negb (p (compl s'))) then s' else s
+         in
+         let filtered_var0 = shrink_aux p s' i0 in
+         (match filtered_var0 with
+          | Some r -> Some r
+          | None -> None)
+       | None -> None))
+      i
+
+  (** val shrink : (t -> bool) -> t -> t **)
+
+  let shrink p s =
+    let filtered_var = shrink_aux p s S.n in
+    (match filtered_var with
+     | Some r -> r
+     | None -> assert false (* absurd case *))
+
+  (** val shrink_spec1 : __ **)
+
+  let shrink_spec1 =
+    __
+
+  (** val shrink_spec2 : __ **)
+
+  let shrink_spec2 =
+    __
+
+  (** val shrink_spec3 : __ **)
+
+  let shrink_spec3 =
     __
 
   (** val compl_compat : __ **)

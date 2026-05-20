@@ -1,5 +1,4 @@
 open Datatypes
-open Utils
 open Xp
 
 module ExplainersDefs :
@@ -29,6 +28,8 @@ module AXpIterativeFinder :
     | Coq_isAXp of E.S.t
     | Coq_isCXp of E.S.t
    end
+
+  val checkWAXp : E.S.t -> bool
 
   val findAXp : E.S.t -> E.S.t
  end

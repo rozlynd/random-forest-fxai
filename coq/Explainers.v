@@ -76,51 +76,46 @@ Module Type SoundWCXpChecker (E : InputProblem) <: WCXpChecker E.
 End SoundWCXpChecker.
 
 
-Module AXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) : AXpFinder E.
+Module AXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) <: AXpFinder E.
     Module Import Xp := ExplainersDefs E.
 
-    Program Fixpoint findAXp_aux (X : S.t) (i : nat) : S.t + { S.n < i } :=
-        match i with
-        | 0 => inleft X
-        | S i =>
-            match @to_fin S.n i with
-            | inleft k =>
-                let X' :=
-                    let X' := S.remove k X in
-                    if S.mem k X && negb (Chk.checkWCXp (S.compl X')) then
-                        X'
-                    else
-                        X
-                in
-                match findAXp_aux X' i with
-                | inleft R => inleft R
-                | inright _ => inright _
-                end
-            | inright _ => inright _
-            end
-        end.
-    Solve All Obligations with Lia.lia.
+    Local Definition checkWAXp X := negb (Chk.checkWCXp (S.compl X)).
 
-    Program Definition findAXp X :=
-        match findAXp_aux X S.n with
-        | inleft R => R
-        | inright _ => False_rect _ _
-        end.
-    Solve All Obligations with Lia.lia.
+    Definition findAXp := S.shrink checkWAXp.
 
 End AXpIterativeFinder.
 
-Module SoundAXpIterativeFinder (E : InputProblem) (Chk : SoundWCXpChecker E) : SoundAXpFinder E.
+Module SoundAXpIterativeFinder (Import E : InputProblem) (Chk : SoundWCXpChecker E) : SoundAXpFinder E.
     Module Impl := AXpIterativeFinder E Chk.
     Include Impl.
 
+    Lemma checkWAXp_reflect :
+        forall X, Bool.reflect (Xp.WAXp X) (checkWAXp X).
+    Admitted.
+
+    Lemma findAXp_isWAXp :
+        forall X, Xp.WAXp X -> Xp.WAXp (findAXp X).
+    Proof.
+        intros X H;
+        apply (Bool.reflect_iff _ _ (checkWAXp_reflect X)),
+            S.shrink_spec2 in H;
+        now destruct (checkWAXp_reflect (S.shrink checkWAXp X)).
+    Qed.
+
     Theorem findAXpSound :
         forall X, Xp.WAXp X -> Xp.AXp (findAXp X).
-    Admitted.
+    Proof.
+        intros X H; unfold findAXp; split.
+        -   now apply findAXp_isWAXp.
+        -   intros Y HSubs HY;
+            apply S.shrink_spec3 with (p := checkWAXp);
+                try (now apply (Bool.reflect_iff _ _ (checkWAXp_reflect _)));
+                assumption.
+    Qed.
 
     Theorem findAXpSane :
         forall X, E.S.Subset (findAXp X) X.
-    Admitted.
+    Proof. apply S.shrink_spec1. Qed.
 
 End SoundAXpIterativeFinder.
 
