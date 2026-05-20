@@ -34,6 +34,29 @@ module AXpIterativeFinder :
   val findAXp : E.S.t -> E.S.t
  end
 
+module CXpIterativeFinder :
+ functor (E:InputProblem) ->
+ functor (Chk:sig
+  module Xp :
+   sig
+    type coq_Xp =
+    | Coq_isAXp of E.S.t
+    | Coq_isCXp of E.S.t
+   end
+
+  val checkWCXp : E.S.t -> bool
+ end) ->
+ sig
+  module Xp :
+   sig
+    type coq_Xp =
+    | Coq_isAXp of E.S.t
+    | Coq_isCXp of E.S.t
+   end
+
+  val findCXp : E.S.t -> E.S.t
+ end
+
 module DummyExplainer :
  functor (E:InputProblem) ->
  sig

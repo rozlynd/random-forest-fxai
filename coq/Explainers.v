@@ -120,6 +120,44 @@ Module SoundAXpIterativeFinder (Import E : InputProblem) (Chk : SoundWCXpChecker
 End SoundAXpIterativeFinder.
 
 
+Module CXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) <: CXpFinder E.
+    Module Import Xp := ExplainersDefs E.
+
+    Definition findCXp := S.shrink Chk.checkWCXp.
+
+End CXpIterativeFinder.
+
+Module SoundCXpIterativeFinder (Import E : InputProblem) (Chk : SoundWCXpChecker E) : SoundCXpFinder E.
+    Module Impl := CXpIterativeFinder E Chk.
+    Include Impl.
+
+    Lemma findCXp_isWCXp :
+        forall X, Xp.WCXp X -> Xp.WCXp (findCXp X).
+    Proof.
+        intros X H;
+        apply (Bool.reflect_iff _ _ (Chk.checkWCXpSound X)),
+            S.shrink_spec2 in H;
+        now destruct (Chk.checkWCXpSound (S.shrink Chk.checkWCXp X)).
+    Qed.
+
+    Theorem findCXpSound :
+        forall X, Xp.WCXp X -> Xp.CXp (findCXp X).
+    Proof.
+        intros X H; unfold findCXp; split.
+        -   now apply findCXp_isWCXp.
+        -   intros Y HSubs HY;
+            apply S.shrink_spec3 with (p := Chk.checkWCXp);
+                try (now apply (Bool.reflect_iff _ _ (Chk.checkWCXpSound _)));
+                assumption.
+    Qed.
+
+    Theorem findCXpSane :
+        forall X, E.S.Subset (findCXp X) X.
+    Proof. apply S.shrink_spec1. Qed.
+
+End SoundCXpIterativeFinder.
+
+
 (* Enumerate all explanations *)
 
 Module Type Explainer (E : InputProblem).

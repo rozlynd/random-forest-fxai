@@ -35,6 +35,27 @@ module AXpIterativeFinder =
     E.S.shrink checkWAXp
  end
 
+module CXpIterativeFinder =
+ functor (E:InputProblem) ->
+ functor (Chk:sig
+  module Xp :
+   sig
+    type coq_Xp =
+    | Coq_isAXp of E.S.t
+    | Coq_isCXp of E.S.t
+   end
+
+  val checkWCXp : E.S.t -> bool
+ end) ->
+ struct
+  module Xp = ExplainersDefs(E)
+
+  (** val findCXp : E.S.t -> E.S.t **)
+
+  let findCXp =
+    E.S.shrink Chk.checkWCXp
+ end
+
 module DummyExplainer =
  functor (E:InputProblem) ->
  struct
