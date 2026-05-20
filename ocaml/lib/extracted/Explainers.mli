@@ -4,6 +4,11 @@ open Xp
 module ExplainersDefs :
  functor (E:InputProblem) ->
  sig
+ end
+
+module EnumeratorsDefs :
+ functor (E:InputProblem) ->
+ sig
   type coq_Xp =
   | Coq_isAXp of E.S.t
   | Coq_isCXp of E.S.t
@@ -14,9 +19,6 @@ module AXpIterativeFinder :
  functor (Chk:sig
   module Xp :
    sig
-    type coq_Xp =
-    | Coq_isAXp of E.S.t
-    | Coq_isCXp of E.S.t
    end
 
   val checkWCXp : E.S.t -> bool
@@ -24,9 +26,6 @@ module AXpIterativeFinder :
  sig
   module Xp :
    sig
-    type coq_Xp =
-    | Coq_isAXp of E.S.t
-    | Coq_isCXp of E.S.t
    end
 
   val checkWAXp : E.S.t -> bool
@@ -39,9 +38,6 @@ module CXpIterativeFinder :
  functor (Chk:sig
   module Xp :
    sig
-    type coq_Xp =
-    | Coq_isAXp of E.S.t
-    | Coq_isCXp of E.S.t
    end
 
   val checkWCXp : E.S.t -> bool
@@ -49,9 +45,6 @@ module CXpIterativeFinder :
  sig
   module Xp :
    sig
-    type coq_Xp =
-    | Coq_isAXp of E.S.t
-    | Coq_isCXp of E.S.t
    end
 
   val findCXp : E.S.t -> E.S.t

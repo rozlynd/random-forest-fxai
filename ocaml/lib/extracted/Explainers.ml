@@ -4,6 +4,11 @@ open Xp
 module ExplainersDefs =
  functor (E:InputProblem) ->
  struct
+ end
+
+module EnumeratorsDefs =
+ functor (E:InputProblem) ->
+ struct
   type coq_Xp =
   | Coq_isAXp of E.S.t
   | Coq_isCXp of E.S.t
@@ -14,9 +19,6 @@ module AXpIterativeFinder =
  functor (Chk:sig
   module Xp :
    sig
-    type coq_Xp =
-    | Coq_isAXp of E.S.t
-    | Coq_isCXp of E.S.t
    end
 
   val checkWCXp : E.S.t -> bool
@@ -40,9 +42,6 @@ module CXpIterativeFinder =
  functor (Chk:sig
   module Xp :
    sig
-    type coq_Xp =
-    | Coq_isAXp of E.S.t
-    | Coq_isCXp of E.S.t
    end
 
   val checkWCXp : E.S.t -> bool
@@ -59,7 +58,7 @@ module CXpIterativeFinder =
 module DummyExplainer =
  functor (E:InputProblem) ->
  struct
-  module Xp = ExplainersDefs(E)
+  module Xp = EnumeratorsDefs(E)
 
   (** val getNew : Xp.coq_Xp list -> Xp.coq_Xp option **)
 

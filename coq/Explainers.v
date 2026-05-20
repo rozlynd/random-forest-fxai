@@ -5,8 +5,12 @@ From RFXP Require Import Utils Xp.
 (* Base definitions *)
 
 Module ExplainersDefs (Import E : InputProblem).
-
     Include ExplanationsDefs E.
+
+End ExplainersDefs.
+
+Module EnumeratorsDefs (Import E : InputProblem).
+    Include ExplainersDefs E.
 
     Variant Xp : Type :=
     | isAXp (X : S.t) : Xp
@@ -18,7 +22,7 @@ Module ExplainersDefs (Import E : InputProblem).
         | isCXp X => CXp X
         end.
 
-End ExplainersDefs.
+End EnumeratorsDefs.
 
 
 (* Find minimal explanations from a seed (eliminate redundant features) *)
@@ -161,7 +165,7 @@ End SoundCXpIterativeFinder.
 (* Enumerate all explanations *)
 
 Module Type Explainer (E : InputProblem).
-    Module Import Xp := ExplainersDefs E.
+    Module Import Xp := EnumeratorsDefs E.
 
     Parameter getNew : list Xp -> option Xp.
 End Explainer.
@@ -184,7 +188,7 @@ End CorrectExplainer.
 
 
 Module DummyExplainer (E : InputProblem) : Explainer E.
-    Module Import Xp := ExplainersDefs E.
+    Module Import Xp := EnumeratorsDefs E.
 
     Definition getNew (l : list Xp) := Some (isAXp E.S.all).
 End DummyExplainer.
