@@ -27,14 +27,14 @@ End EnumeratorsDefs.
 
 (* Find minimal explanations from a seed (eliminate redundant features) *)
 
-Module Type AXpFinderBase (Import E : InputProblem).
+Module Type AXpFinderBaseOn (Import E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
     Parameter findAXp : S.t -> S.t.
-End AXpFinderBase.
+End AXpFinderBaseOn.
 
-Module Type AXpFinder (Import E : InputProblem).
-    Include AXpFinderBase E.
+Module Type AXpFinderOn (Import E : InputProblem) <: AXpFinderBaseOn E.
+    Include AXpFinderBaseOn E.
 
     Axiom findAXpSound :
         forall X, Xp.WAXp X -> Xp.AXp (findAXp X).
@@ -42,17 +42,27 @@ Module Type AXpFinder (Import E : InputProblem).
     Axiom findAXpSane :
         forall X, S.Subset (findAXp X) X.
 
+End AXpFinderOn.
+
+Module Type AXpFinderBase.
+    Declare Module E : InputProblem.
+    Include AXpFinderBaseOn E.
+End AXpFinderBase.
+
+Module Type AXpFinder <: AXpFinderBase.
+    Declare Module E : InputProblem.
+    Include AXpFinderOn E.
 End AXpFinder.
 
 
-Module Type CXpFinderBase (Import E : InputProblem).
+Module Type CXpFinderBaseOn (Import E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
     Parameter findCXp : S.t -> S.t.
-End CXpFinderBase.
+End CXpFinderBaseOn.
 
-Module Type CXpFinder (Import E : InputProblem).
-    Include CXpFinderBase E.
+Module Type CXpFinderOn (Import E : InputProblem) <: CXpFinderBaseOn E.
+    Include CXpFinderBaseOn E.
 
     Axiom findCXpSound :
         forall X, Xp.WCXp X -> Xp.CXp (findCXp X).
@@ -60,39 +70,59 @@ Module Type CXpFinder (Import E : InputProblem).
     Axiom findCXpSane :
         forall X, S.Subset (findCXp X) X.
 
+End CXpFinderOn.
+
+Module Type CXpFinderBase.
+    Declare Module E : InputProblem.
+    Include CXpFinderBaseOn E.
+End CXpFinderBase.
+
+Module Type CXpFinder <: CXpFinderBase.
+    Declare Module E : InputProblem.
+    Include CXpFinderOn E.
 End CXpFinder.
 
 
 (* Decide if a set is a WCXp *)
 
-Module Type WCXpCheckerBase (Import E : InputProblem).
+Module Type WCXpCheckerBaseOn (Import E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
     Parameter checkWCXp : S.t -> bool.
-End WCXpCheckerBase.
+End WCXpCheckerBaseOn.
 
-Module Type WCXpChecker (Import E : InputProblem) <: WCXpCheckerBase E.
-    Include WCXpCheckerBase E.
+Module Type WCXpCheckerOn (Import E : InputProblem) <: WCXpCheckerBaseOn E.
+    Include WCXpCheckerBaseOn E.
 
     Axiom checkWCXpSound :
         forall X, Bool.reflect (Xp.WCXp X) (checkWCXp X).
 
+End WCXpCheckerOn.
+
+Module Type WCXpCheckerBase.
+    Declare Module E : InputProblem.
+    Include WCXpCheckerBaseOn E.
+End WCXpCheckerBase.
+
+Module Type WCXpChecker <: WCXpCheckerBase.
+    Declare Module E : InputProblem.
+    Include WCXpCheckerOn E.
 End WCXpChecker.
 
 
 (* Default implementations of finders given a WCXp checker *)
 
-Module AXpIterativeFinderBase (Import E : InputProblem) (Chk : WCXpChecker E) <: AXpFinderBase E.
+Module AXpIterativeFinderBaseOn (Import E : InputProblem) (Chk : WCXpChecker with Module E := E) <: AXpFinderBaseOn E.
     Module Import Xp := ExplainersDefs E.
 
     Local Definition checkWAXp X := negb (Chk.checkWCXp (S.compl X)).
 
     Definition findAXp := S.shrink checkWAXp.
 
-End AXpIterativeFinderBase.
+End AXpIterativeFinderBaseOn.
 
-Module AXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) : AXpFinder E.
-    Module Impl := AXpIterativeFinderBase E Chk.
+Module AXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Module E := E) : AXpFinderOn E.
+    Module Impl := AXpIterativeFinderBaseOn E Chk.
     Include Impl.
 
     Lemma checkWAXp_reflect :
@@ -123,18 +153,23 @@ Module AXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) : AXpF
         forall X, E.S.Subset (findAXp X) X.
     Proof. apply S.shrink_spec1. Qed.
 
+End AXpIterativeFinderOn.
+
+Module AXpIterativeFinder (E_ : InputProblem) (Chk : WCXpChecker with Module E := E_) : AXpFinder with Module E := E_.
+    Module E := E_.
+    Include AXpFinderOn E_.
 End AXpIterativeFinder.
 
 
-Module CXpIterativeFinderBase (Import E : InputProblem) (Chk : WCXpChecker E) <: CXpFinderBase E.
+Module CXpIterativeFinderBaseOn (Import E : InputProblem) (Chk : WCXpChecker with Module E := E) <: CXpFinderBaseOn E.
     Module Import Xp := ExplainersDefs E.
 
     Definition findCXp := S.shrink Chk.checkWCXp.
 
-End CXpIterativeFinderBase.
+End CXpIterativeFinderBaseOn.
 
-Module CXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) : CXpFinder E.
-    Module Impl := CXpIterativeFinderBase E Chk.
+Module CXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Module E := E) : CXpFinderOn E.
+    Module Impl := CXpIterativeFinderBaseOn E Chk.
     Include Impl.
 
     Lemma findCXp_isWCXp :
@@ -161,6 +196,11 @@ Module CXpIterativeFinder (Import E : InputProblem) (Chk : WCXpChecker E) : CXpF
         forall X, E.S.Subset (findCXp X) X.
     Proof. apply S.shrink_spec1. Qed.
 
+End CXpIterativeFinderOn.
+
+Module CXpIterativeFinder (E_ : InputProblem) (Chk : WCXpChecker with Module E := E_) : CXpFinder with Module E := E_.
+    Module E := E_.
+    Include CXpFinderOn E_.
 End CXpIterativeFinder.
 
 
