@@ -1,5 +1,8 @@
+open Bool
 open Datatypes
 open Xp
+
+type __ = Obj.t
 
 module ExplainersDefs :
  functor (E:InputProblem) ->
@@ -14,7 +17,7 @@ module EnumeratorsDefs :
   | Coq_isCXp of E.S.t
  end
 
-module AXpIterativeFinder :
+module AXpIterativeFinderBase :
  functor (E:InputProblem) ->
  functor (Chk:sig
   module Xp :
@@ -22,6 +25,8 @@ module AXpIterativeFinder :
    end
 
   val checkWCXp : E.S.t -> bool
+
+  val checkWCXpSound : E.S.t -> reflect
  end) ->
  sig
   module Xp :
@@ -33,6 +38,44 @@ module AXpIterativeFinder :
   val findAXp : E.S.t -> E.S.t
  end
 
+module AXpIterativeFinder :
+ functor (E:InputProblem) ->
+ functor (Chk:sig
+  module Xp :
+   sig
+   end
+
+  val checkWCXp : E.S.t -> bool
+
+  val checkWCXpSound : E.S.t -> reflect
+ end) ->
+ sig
+  module Xp :
+   sig
+   end
+
+  val findAXp : E.S.t -> E.S.t
+ end
+
+module CXpIterativeFinderBase :
+ functor (E:InputProblem) ->
+ functor (Chk:sig
+  module Xp :
+   sig
+   end
+
+  val checkWCXp : E.S.t -> bool
+
+  val checkWCXpSound : E.S.t -> reflect
+ end) ->
+ sig
+  module Xp :
+   sig
+   end
+
+  val findCXp : E.S.t -> E.S.t
+ end
+
 module CXpIterativeFinder :
  functor (E:InputProblem) ->
  functor (Chk:sig
@@ -41,6 +84,8 @@ module CXpIterativeFinder :
    end
 
   val checkWCXp : E.S.t -> bool
+
+  val checkWCXpSound : E.S.t -> reflect
  end) ->
  sig
   module Xp :
