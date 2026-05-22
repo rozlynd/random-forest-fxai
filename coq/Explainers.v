@@ -71,7 +71,7 @@ Module Type WCXpCheckerBase (Import E : InputProblem).
     Parameter checkWCXp : S.t -> bool.
 End WCXpCheckerBase.
 
-Module Type WCXpChecker (Import E : InputProblem).
+Module Type WCXpChecker (Import E : InputProblem) <: WCXpCheckerBase E.
     Include WCXpCheckerBase E.
 
     Axiom checkWCXpSound :
