@@ -178,15 +178,10 @@ Module Type Enumerator (Import E : InputProblem) <: EnumeratorBase E.
     Axiom getNewSound :
         forall Xs X, getNew Xs = Some X -> Xp.isXp X.
 
-End Enumerator.
-
-Module Type CorrectExplainer (Import E : InputProblem) <: Enumerator E.
-    Include Enumerator E.
-
     Axiom getNewComplete :
         forall Xs X, getNew Xs = None -> Xp.isXp X -> List.In X Xs.
             
-End CorrectExplainer.
+End Enumerator.
 
 
 Module DummyExplainer (Import E : InputProblem) : EnumeratorBase E.
