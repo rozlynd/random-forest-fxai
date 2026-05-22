@@ -80,6 +80,8 @@ Module Type WCXpChecker (Import E : InputProblem) <: WCXpCheckerBase E.
 End WCXpChecker.
 
 
+(* Default implementations of finders given a WCXp checker *)
+
 Module AXpIterativeFinderBase (Import E : InputProblem) (Chk : WCXpChecker E) <: AXpFinderBase E.
     Module Import Xp := ExplainersDefs E.
 
