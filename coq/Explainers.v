@@ -166,22 +166,22 @@ End CXpIterativeFinder.
 
 (* Enumerate all explanations *)
 
-Module Type Explainer (E : InputProblem).
+Module Type EnumeratorBase (Import E : InputProblem).
     Module Import Xp := EnumeratorsDefs E.
 
     Parameter getNew : list Xp -> option Xp.
-End Explainer.
+End EnumeratorBase.
 
-Module Type SoundExplainer (E : InputProblem) <: Explainer E.
-    Include Explainer E.
+Module Type Enumerator (Import E : InputProblem) <: EnumeratorBase E.
+    Include EnumeratorBase E.
 
     Axiom getNewSound :
         forall Xs X, getNew Xs = Some X -> Xp.isXp X.
 
-End SoundExplainer.
+End Enumerator.
 
-Module Type CorrectExplainer (E : InputProblem) <: SoundExplainer E.
-    Include SoundExplainer E.
+Module Type CorrectExplainer (Import E : InputProblem) <: Enumerator E.
+    Include Enumerator E.
 
     Axiom getNewComplete :
         forall Xs X, getNew Xs = None -> Xp.isXp X -> List.In X Xs.
@@ -189,7 +189,7 @@ Module Type CorrectExplainer (E : InputProblem) <: SoundExplainer E.
 End CorrectExplainer.
 
 
-Module DummyExplainer (E : InputProblem) : Explainer E.
+Module DummyExplainer (Import E : InputProblem) : EnumeratorBase E.
     Module Import Xp := EnumeratorsDefs E.
 
     Definition getNew (l : list Xp) := Some (isAXp E.S.all).
