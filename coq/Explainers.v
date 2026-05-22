@@ -157,7 +157,8 @@ End AXpIterativeFinderOn.
 
 Module AXpIterativeFinder (E_ : InputProblem) (Chk : WCXpChecker with Module E := E_) : AXpFinder with Module E := E_.
     Module E := E_.
-    Include AXpFinderOn E_.
+    Module Impl := AXpIterativeFinderOn E_ Chk.
+    Include Impl.
 End AXpIterativeFinder.
 
 
@@ -200,7 +201,8 @@ End CXpIterativeFinderOn.
 
 Module CXpIterativeFinder (E_ : InputProblem) (Chk : WCXpChecker with Module E := E_) : CXpFinder with Module E := E_.
     Module E := E_.
-    Include CXpFinderOn E_.
+    Module Impl := CXpIterativeFinderOn E_ Chk.
+    Include Impl.
 End CXpIterativeFinder.
 
 

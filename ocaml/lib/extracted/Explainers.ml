@@ -1,4 +1,5 @@
 open Bool
+open Datatypes
 open Equalities
 open Features
 open Utils
@@ -58,18 +59,40 @@ module type WCXpChecker =
   val checkWCXpSound : E.S.t -> reflect
  end
 
-module AXpIterativeFinder =
- functor (E_:InputProblem) ->
- functor (Chk:WCXpChecker with module E = E_) ->
+module AXpIterativeFinderBaseOn =
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
  struct
-  module E = E_
+  module Xp = ExplainersDefs(E)
 
-  module Xp = ExplainersDefs(E_)
+  (** val checkWAXp : E.S.t -> bool **)
 
-  (** val findAXp : E_.S.t -> E_.S.t **)
+  let checkWAXp x =
+    negb (Chk.checkWCXp (E.S.compl x))
+
+  (** val findAXp : E.S.t -> E.S.t **)
 
   let findAXp =
-    failwith "AXIOM TO BE REALIZED (RFXP.Explainers.AXpIterativeFinder.findAXp)"
+    E.S.shrink checkWAXp
+ end
+
+module AXpIterativeFinderOn =
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ struct
+  module Impl = AXpIterativeFinderBaseOn(E)(Chk)
+
+  module Xp = Impl.Xp
+
+  (** val checkWAXp : E.S.t -> bool **)
+
+  let checkWAXp x =
+    negb (Chk.checkWCXp (E.S.compl x))
+
+  (** val findAXp : E.S.t -> E.S.t **)
+
+  let findAXp =
+    E.S.shrink checkWAXp
 
   (** val findAXpSound : __ **)
 
@@ -82,18 +105,82 @@ module AXpIterativeFinder =
     __
  end
 
+module AXpIterativeFinder =
+ functor (E_:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E_) ->
+ struct
+  module E = E_
+
+  module Impl = AXpIterativeFinderOn(E_)(Chk)
+
+  module Xp = Impl.Xp
+
+  (** val findAXp : E_.S.t -> E_.S.t **)
+
+  let findAXp =
+    Impl.findAXp
+
+  (** val findAXpSound : __ **)
+
+  let findAXpSound =
+    __
+
+  (** val findAXpSane : __ **)
+
+  let findAXpSane =
+    __
+ end
+
+module CXpIterativeFinderBaseOn =
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ struct
+  module Xp = ExplainersDefs(E)
+
+  (** val findCXp : E.S.t -> E.S.t **)
+
+  let findCXp =
+    E.S.shrink Chk.checkWCXp
+ end
+
+module CXpIterativeFinderOn =
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ struct
+  module Impl = CXpIterativeFinderBaseOn(E)(Chk)
+
+  module Xp = Impl.Xp
+
+  (** val findCXp : E.S.t -> E.S.t **)
+
+  let findCXp =
+    E.S.shrink Chk.checkWCXp
+
+  (** val findCXpSound : __ **)
+
+  let findCXpSound =
+    __
+
+  (** val findCXpSane : __ **)
+
+  let findCXpSane =
+    __
+ end
+
 module CXpIterativeFinder =
  functor (E_:InputProblem) ->
  functor (Chk:WCXpChecker with module E = E_) ->
  struct
   module E = E_
 
-  module Xp = ExplainersDefs(E_)
+  module Impl = CXpIterativeFinderOn(E_)(Chk)
+
+  module Xp = Impl.Xp
 
   (** val findCXp : E_.S.t -> E_.S.t **)
 
   let findCXp =
-    failwith "AXIOM TO BE REALIZED (RFXP.Explainers.CXpIterativeFinder.findCXp)"
+    Impl.findCXp
 
   (** val findCXpSound : __ **)
 

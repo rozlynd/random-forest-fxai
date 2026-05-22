@@ -1,4 +1,5 @@
 open Bool
+open Datatypes
 open Equalities
 open Features
 open Utils
@@ -57,10 +58,56 @@ module type WCXpChecker =
   val checkWCXpSound : E.S.t -> reflect
  end
 
+module AXpIterativeFinderBaseOn :
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ sig
+  module Xp :
+   sig
+   end
+
+  val checkWAXp : E.S.t -> bool
+
+  val findAXp : E.S.t -> E.S.t
+ end
+
+module AXpIterativeFinderOn :
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ sig
+  module Xp :
+   sig
+   end
+
+  val findAXp : E.S.t -> E.S.t
+ end
+
 module AXpIterativeFinder :
  functor (E_:InputProblem) ->
  functor (Chk:WCXpChecker with module E = E_) ->
  AXpFinder with module E = E_
+
+module CXpIterativeFinderBaseOn :
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ sig
+  module Xp :
+   sig
+   end
+
+  val findCXp : E.S.t -> E.S.t
+ end
+
+module CXpIterativeFinderOn :
+ functor (E:InputProblem) ->
+ functor (Chk:WCXpChecker with module E = E) ->
+ sig
+  module Xp :
+   sig
+   end
+
+  val findCXp : E.S.t -> E.S.t
+ end
 
 module CXpIterativeFinder :
  functor (E_:InputProblem) ->
