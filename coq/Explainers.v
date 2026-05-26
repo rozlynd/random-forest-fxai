@@ -31,6 +31,7 @@ Module Type AXpFinderBaseOn (Import E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
     Parameter findAXp : S.t -> S.t.
+
 End AXpFinderBaseOn.
 
 Module Type AXpFinderOn (Import E : InputProblem) <: AXpFinderBaseOn E.
@@ -59,6 +60,7 @@ Module Type CXpFinderBaseOn (Import E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
     Parameter findCXp : S.t -> S.t.
+
 End CXpFinderBaseOn.
 
 Module Type CXpFinderOn (Import E : InputProblem) <: CXpFinderBaseOn E.
@@ -89,6 +91,7 @@ Module Type WCXpCheckerBaseOn (Import E : InputProblem).
     Module Import Xp := ExplainersDefs E.
 
     Parameter checkWCXp : S.t -> bool.
+
 End WCXpCheckerBaseOn.
 
 Module Type WCXpCheckerOn (Import E : InputProblem) <: WCXpCheckerBaseOn E.
@@ -212,6 +215,7 @@ Module Type EnumeratorBase (Import E : InputProblem).
     Module Import Xp := EnumeratorsDefs E.
 
     Parameter getNew : list Xp -> option Xp.
+
 End EnumeratorBase.
 
 Module Type Enumerator (Import E : InputProblem) <: EnumeratorBase E.
@@ -230,4 +234,5 @@ Module DummyExplainer (Import E : InputProblem) : EnumeratorBase E.
     Module Import Xp := EnumeratorsDefs E.
 
     Definition getNew (l : list Xp) := Some (isAXp E.S.all).
+
 End DummyExplainer.
