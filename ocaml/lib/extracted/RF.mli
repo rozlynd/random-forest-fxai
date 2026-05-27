@@ -1,4 +1,3 @@
-open DT
 open Datatypes
 open Features
 open Orders
@@ -30,7 +29,7 @@ module MakeRF :
 
   module Dt :
    sig
-    type t = O.K.t dt
+    type t = O.K.t DT.dt
 
     val eval : t -> featureVec -> O.K.t
    end

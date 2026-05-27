@@ -6,6 +6,7 @@
 ./Explainers.v
 ./Voting.v
 ./DT.v
+./DTXp.v
 ./RF.v
 ./CNF.v
 ./Sat.v

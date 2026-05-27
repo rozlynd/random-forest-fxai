@@ -1,7 +1,7 @@
 Require Extraction ExtrOcamlBasic ExtrOcamlNatInt ExtrOcamlZInt ExtrOCamlFloats ExtrOcamlNativeString.
 Require List.
 
-From RFXP Require Import Utils Features Xp Explainers DT RF.
+From RFXP Require Import Utils Features Xp Explainers DT DTXp RF.
 
 Set Extraction Output Directory "../ocaml/lib/extracted".
 
@@ -12,4 +12,5 @@ Separate Extraction
     StringOT to_nat to_fin' MakeFinSet
     boolean_feature float_feature string_enum_feature enum_feature
     MakeDT MakeRF
+    DtWCXpChecker DtAXpFinder DtCXpFinder
     (*MakeInputProblem*) AXpIterativeFinder CXpIterativeFinder DummyExplainer.

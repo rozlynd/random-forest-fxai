@@ -1,4 +1,3 @@
-open DT
 open Datatypes
 open Features
 open Orders
@@ -24,7 +23,7 @@ module MakeRF =
     module K = KFull
    end
 
-  module Dt = MakeDT(F)(O_dt)
+  module Dt = DT.MakeDT(F)(O_dt)
 
   type t = Dt.t nelist
 
