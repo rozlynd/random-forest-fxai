@@ -10,7 +10,7 @@ Section DTDef.
     Inductive dt : Type :=
     | Leaf (c : K)
     | Node (i : fin n)
-           (_ : testIndex (getFeature  fs i))
+           (_ : testIndex (getFeature fs i))
            (dt1 dt2 : dt).
 
 End DTDef.
