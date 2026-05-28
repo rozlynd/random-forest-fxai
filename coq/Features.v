@@ -86,7 +86,7 @@ Section Features.
     | isContinuousFeature : getFeatureKind float_feature
     | isBooleanFeature : getFeatureKind boolean_feature
     | isStringEnumFeature (s : StringSet.t) : getFeatureKind (string_enum_feature s)
-    | isEnumFeature (n : nat) : getFeatureKind (enum_feature n).
+    (*| isEnumFeature (n : nat) : getFeatureKind (enum_feature n)*).
 
     Inductive featureSig : nat -> Type :=
     | featureSigNil : featureSig 0
@@ -104,7 +104,7 @@ Section Features.
     Definition float_feature_wrap : feature_wrap := existT _ float_feature isContinuousFeature.
     Definition boolean_feature_wrap : feature_wrap := existT _ boolean_feature isBooleanFeature.
     Definition string_enum_feature_wrap (s : StringSet.t) : feature_wrap := existT _ (string_enum_feature s) (isStringEnumFeature s).
-    Definition enum_feature_wrap (n : nat) : feature_wrap := existT _ (enum_feature n) (isEnumFeature n).
+    (*Definition enum_feature_wrap (n : nat) : feature_wrap := existT _ (enum_feature n) (isEnumFeature n).*)
 
 
     Fixpoint getFeatureWrap {n : nat} (fs : featureSig n) {struct fs} : fin n -> feature_wrap :=

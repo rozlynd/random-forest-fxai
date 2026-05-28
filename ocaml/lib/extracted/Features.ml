@@ -37,7 +37,6 @@ type getFeatureKind =
 | Coq_isContinuousFeature
 | Coq_isBooleanFeature
 | Coq_isStringEnumFeature of StringSet.t
-| Coq_isEnumFeature of int
 
 type featureSig =
 | Coq_featureSigNil
