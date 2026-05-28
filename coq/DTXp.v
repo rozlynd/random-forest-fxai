@@ -77,13 +77,22 @@ Module DtWCXpChecker (Import E_ : DTInputProblem) : WCXpChecker with Module E :=
 
     Definition checkWCXp (X : S.t) :=
         match Impl.refute E.k E.v X with
-        | None => true
-        | Some _ => false
+        | None => false
+        | Some _ => true
         end.
 
     Theorem checkWCXpSound :
         forall X, Bool.reflect (Xp.WCXp X) (checkWCXp X).
-    Admitted.
+    Proof.
+        intros X; unfold checkWCXp;
+        destruct (Impl.refute E.k E.v X) as [v |] eqn:Heq;
+        constructor.
+        -   exists v; split.
+            +   eapply Impl.refute_success_agrees; eassumption.
+            +   eapply Impl.refute_success_contradicts; eassumption.
+        -   intros (v & Heqv & Hcont);
+            eapply Hcont, Impl.refute_fail; eassumption.
+    Qed.
 
 End DtWCXpChecker.
 

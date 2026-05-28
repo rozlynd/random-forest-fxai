@@ -89,13 +89,16 @@ module DtWCXpChecker =
 
   let checkWCXp x =
     match Impl.refute E.k E.v x with
-    | Some _ -> false
-    | None -> true
+    | Some _ -> true
+    | None -> false
 
   (** val checkWCXpSound : E.S.t -> reflect **)
 
-  let checkWCXpSound =
-    failwith "AXIOM TO BE REALIZED (RFXP.DTXp.DtWCXpChecker.checkWCXpSound)"
+  let checkWCXpSound x =
+    let o = Impl.refute E.k E.v x in
+    (match o with
+     | Some _ -> ReflectT
+     | None -> ReflectF)
  end
 
 module DtAXpFinder =
