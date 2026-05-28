@@ -49,14 +49,14 @@ Section Features.
         (* Given a feature based on some enumeration of strings { s1, .., sn },
            there is a test for every subset of the enumeration: whether the
            feature value is a member of that subset *)
-        Variant string_enum_test (s : StringSet.t) := subset_mem (p : string_enum s -> bool).
+        Variant string_enum_test (s : StringSet.t) := subset_mem (p : StringSet.elt -> bool).
 
         Definition string_enum_feature (s : StringSet.t) : feature := {|
             dom := string_enum s ;
             testIndex := string_enum_test s ;
             tests := fun t x =>
                 match t with
-                | subset_mem _ p => p x
+                | subset_mem _ p => p (proj1_sig x)
                 end
         |}.
 
@@ -289,9 +289,9 @@ Section Examples.
     Proof. refine (float_lt (exist _ 0.75 _)); reflexivity. Defined.
 
     Definition is_yellow : string_enum_test s1 :=
-        subset_mem s1 (fun '(exist _ s _) => eqb s "yellow").
+        subset_mem s1 (fun s => eqb s "yellow").
     Definition is_no : string_enum_test s2 :=
-        subset_mem s2 (fun '(exist _ s _) => eqb s "no").
+        subset_mem s2 (fun s => eqb s "no").
 
     Proposition check_test1 :
         featureTest v F1 is_lt_075 = true.
