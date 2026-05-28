@@ -11,14 +11,14 @@ End DTInputProblem.
 
 
 Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
+    Module Import FD := FeatureSigDefs C S.
 
     Parameter constraint : Type.
-    Parameter init : S.t -> constraint.
     Parameter update : forall {i : fin C.n}, testIndex (getFeature C.fs i) -> constraint -> constraint.
     Parameter nupdate : forall {i : fin C.n}, testIndex (getFeature C.fs i) -> constraint -> constraint.
     Parameter witness : constraint -> option (featureVec C.fs).
 
-    Fixpoint refute
+    Fixpoint refute_aux
             (v : featureVec C.fs)
             (c0 : C.K.t)
             (X : S.t)
@@ -33,17 +33,39 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
                 witness C
         | Node i test dt1 dt2 =>
             if S.mem i X then
-                match refute v c0 X (update test C) dt1 with
+                match refute_aux v c0 X (update test C) dt1 with
                 | Some r => Some r
-                | None => refute v c0 X (nupdate test C) dt2
+                | None => refute_aux v c0 X (nupdate test C) dt2
                 end
             else
                 let dt' :=
                     if featureTest' v i test then dt1
                     else dt2
                 in
-                refute v c0 X C dt'
+                refute_aux v c0 X C dt'
         end.
+
+    Parameter init : S.t -> constraint.
+
+    (* Search for a v' that gives a different prediction than v on the decision tree
+       and such that v' agrees with v on the complement of X. *)
+    Definition refute (dt : C.t) (v : featureVec C.fs) (X : S.t) : option (featureVec C.fs) :=
+        refute_aux v (C.eval dt v) X (init X) dt.
+
+    Theorem refute_success_agrees :
+        forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
+            refute dt v X = Some v' -> FD.equiv (S.compl X) v v'.
+    Admitted.
+
+    Theorem refute_success_contradicts :
+        forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
+            refute dt v X = Some v' -> ~ C.K.eq (C.eval dt v) (C.eval dt v').
+    Admitted.
+
+    Theorem refute_fail :
+        forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
+            refute dt v X = None -> FD.equiv (S.compl X) v v' -> C.K.eq (C.eval dt v) (C.eval dt v').
+    Admitted.
 
 End DtWCXpCheckerImpl.
 
@@ -54,7 +76,7 @@ Module DtWCXpChecker (Import E_ : DTInputProblem) : WCXpChecker with Module E :=
     Module Impl := DtWCXpCheckerImpl E E.S.
 
     Definition checkWCXp (X : S.t) :=
-        match Impl.refute E.v (E.eval E.k E.v) X (Impl.init X) E.k with
+        match Impl.refute E.k E.v X with
         | None => true
         | Some _ => false
         end.

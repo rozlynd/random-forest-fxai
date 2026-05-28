@@ -32,9 +32,11 @@ module DtWCXpCheckerImpl :
  functor (C:DT.DT) ->
  functor (S:FinSet) ->
  sig
-  type coq_constraint (* AXIOM TO BE REALIZED *)
+  module FD :
+   sig
+   end
 
-  val init : S.t -> coq_constraint
+  type coq_constraint (* AXIOM TO BE REALIZED *)
 
   val update : fin -> testIndex -> coq_constraint -> coq_constraint
 
@@ -42,8 +44,12 @@ module DtWCXpCheckerImpl :
 
   val witness : coq_constraint -> featureVec option
 
-  val refute :
+  val refute_aux :
     featureVec -> C.K.t -> S.t -> coq_constraint -> C.t -> featureVec option
+
+  val init : S.t -> coq_constraint
+
+  val refute : C.t -> featureVec -> S.t -> featureVec option
  end
 
 module DtWCXpChecker :

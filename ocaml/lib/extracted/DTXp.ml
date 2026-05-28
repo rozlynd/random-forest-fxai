@@ -33,12 +33,9 @@ module DtWCXpCheckerImpl =
  functor (C:DT.DT) ->
  functor (S:FinSet) ->
  struct
+  module FD = FeatureSigDefs(C)(S)
+
   type coq_constraint (* AXIOM TO BE REALIZED *)
-
-  (** val init : S.t -> coq_constraint **)
-
-  let init =
-    failwith "AXIOM TO BE REALIZED (RFXP.DTXp.DtWCXpCheckerImpl.init)"
 
   (** val update : fin -> testIndex -> coq_constraint -> coq_constraint **)
 
@@ -55,18 +52,28 @@ module DtWCXpCheckerImpl =
   let witness =
     failwith "AXIOM TO BE REALIZED (RFXP.DTXp.DtWCXpCheckerImpl.witness)"
 
-  (** val refute :
+  (** val refute_aux :
       featureVec -> C.K.t -> S.t -> coq_constraint -> C.t -> featureVec option **)
 
-  let rec refute v0 c0 x c = function
+  let rec refute_aux v0 c0 x c = function
   | DT.Leaf c1 -> if C.K.eq_dec c1 c0 then None else witness c
   | DT.Node (i, test, dt1, dt2) ->
     if S.mem i x
-    then (match refute v0 c0 x (update i test c) dt1 with
+    then (match refute_aux v0 c0 x (update i test c) dt1 with
           | Some r -> Some r
-          | None -> refute v0 c0 x (nupdate i test c) dt2)
+          | None -> refute_aux v0 c0 x (nupdate i test c) dt2)
     else let dt' = if featureTest' C.n C.fs v0 i test then dt1 else dt2 in
-         refute v0 c0 x c dt'
+         refute_aux v0 c0 x c dt'
+
+  (** val init : S.t -> coq_constraint **)
+
+  let init =
+    failwith "AXIOM TO BE REALIZED (RFXP.DTXp.DtWCXpCheckerImpl.init)"
+
+  (** val refute : C.t -> featureVec -> S.t -> featureVec option **)
+
+  let refute dt0 v0 x =
+    refute_aux v0 (C.eval dt0 v0) x (init x) dt0
  end
 
 module DtWCXpChecker =
@@ -81,7 +88,7 @@ module DtWCXpChecker =
   (** val checkWCXp : E_.S.t -> bool **)
 
   let checkWCXp x =
-    match Impl.refute E.v (E.eval E.k E.v) x (Impl.init x) E.k with
+    match Impl.refute E.k E.v x with
     | Some _ -> false
     | None -> true
 
