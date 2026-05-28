@@ -252,7 +252,7 @@ Module DtWCXpChecker (Import E_ : DTInputProblem) : WCXpChecker with Module E :=
             +   eapply Impl.refute_success_contradicts; eassumption.
         -   intros (v & Heqv & Hcont);
             eapply Hcont, Impl.refute_fail; eassumption.
-    Qed.
+    Defined.
 
 End DtWCXpChecker.
 
