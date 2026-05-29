@@ -2,9 +2,10 @@ open Extracted
 
 open Utils
 open Features
-open DT
-open RF
 open Xp
+open Explainers
+open DT
+open DTXp
 
 module F : FeatureSig = struct
 
@@ -19,7 +20,7 @@ module F : FeatureSig = struct
 
 end
 
-module O : RFOutput
+module O : Output
   with module K = StringOT
     = struct
 
@@ -27,49 +28,54 @@ module O : RFOutput
 
 end
 
-module RF = MakeRF (F) (O)
+module Dt = MakeDT (F) (O)
 
-let to_fin = to_fin' F.n
+module Input : DTInputProblem = struct
 
-let decision_tree_1 =
-  Node (to_fin 0, Obj.repr (),
-    Node (to_fin 2, Obj.repr (),
-      Leaf "Yes",
-      Leaf "No"),
-    Leaf "No")
+  let n = F.n
 
-let decision_tree_2 =
-  Node (to_fin 1, Obj.repr (),
-    Leaf "No",
-    Node (to_fin 3, Obj.repr 75.0,
-      Leaf "No",
-      Leaf "Yes"))
+  let fs = F.fs
 
-let decision_tree_3 =
-  Node (to_fin 1, Obj.repr (),
-    Node (to_fin 0, Obj.repr (),
-      Leaf "Yes",
-      Leaf "No"),
-    Node (to_fin 2, Obj.repr (),
-      Leaf "Yes",
-      Leaf "No"))
+  module K = O.K
 
-let random_forest =
-  Coq_necons (decision_tree_1, [ decision_tree_2 ; decision_tree_3 ])
+  type t = Dt.t
 
-let instance =
-  Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 3,
-    (Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
-    (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
-    (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
-    Coq_featureSigNil)))))),
-  Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr false, 2,
-    (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
-    (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
-    Coq_featureSigNil)))),
-  Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 1,
-    (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
-    Coq_featureSigNil)),
-  Coq_featureVecCons (float_feature, Coq_isContinuousFeature, Obj.repr 70.0, 0,
-    Coq_featureSigNil,
-  Coq_featureVecNil))))
+  let eval = Dt.eval
+
+  let to_fin = to_fin' F.n
+
+  let k =
+    Node (to_fin 1, Obj.repr (),
+      Node (to_fin 0, Obj.repr (),
+        Leaf "Yes",
+        Leaf "No"),
+      Node (to_fin 2, Obj.repr (),
+        Leaf "Yes",
+        Leaf "No"))
+
+  let v =
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 3,
+      (Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
+      (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
+      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+      Coq_featureSigNil)))))),
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr false, 2,
+      (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
+      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+      Coq_featureSigNil)))),
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 1,
+      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+      Coq_featureSigNil)),
+    Coq_featureVecCons (float_feature, Coq_isContinuousFeature, Obj.repr 70.0, 0,
+      Coq_featureSigNil,
+    Coq_featureVecNil))))
+
+  module S = MakeFinSet (struct let n = n end)
+
+end
+
+module Find = DtAXpFinder (Input)
+
+let as_list e =
+  let l = Input.S.elements e in
+  List.map (fun f -> to_nat Input.S.n f + 1) l

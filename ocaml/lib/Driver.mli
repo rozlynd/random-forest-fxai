@@ -1,21 +1,13 @@
 open Extracted
 
 open Utils
-open DT
 open Features
+open Explainers
+open DT
+open DTXp
 
-module RF : sig
+module Input : DTInputProblem
 
-  module Dt : sig
-    type t = string dt
-    val eval : t -> featureVec -> string
-  end
+module Find : AXpFinder with module E = Input
 
-  type t = Dt.t nelist
-  val eval : t -> featureVec -> string
-
-end
-
-val random_forest : RF.t
-
-val instance : featureVec
+val as_list : Input.S.t -> int list
