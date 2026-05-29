@@ -249,12 +249,11 @@ Section FeatureSpaceConstraint.
         | isStringEnumFeature s => CSEnum (senumConstraintInitFull s)
         end.
 
-    (* ??? *)
-    Fail Definition constraintInitSingleton {f : feature} (get : getFeatureKind f) : dom f -> fConstraint f get :=
+    Definition constraintInitSingleton {f : feature} (get : getFeatureKind f) : dom f -> fConstraint f get :=
         match get with
         | isBooleanFeature => fun x => CBool (boolConstraintInitSingleton x)
         | isContinuousFeature => fun x => CFloat (floatConstraintInitSingleton x)
-        | isStringEnumFeature s => fun x => CSEnum (senumConstraintInitSingleton s x)
+        | isStringEnumFeature s => fun x => CSEnum (senumConstraintInitSingleton x)
         end.
 
 
@@ -324,7 +323,7 @@ Section FeatureSpaceConstraint.
         | @featureVecCons f get x _ fs vs => fun X =>
             let c :=
                 if X F1 then constraintInitFull get
-                else (*constraintInitSingleton*) constraintInitFull get
+                else constraintInitSingleton get x
             in
             featureSpaceConstraintCons f get c (initConstraint (fun k => X (FS k)) vs)
         end X.

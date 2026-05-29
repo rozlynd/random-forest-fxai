@@ -75,6 +75,13 @@ val floatConstraintInitFull : floatConstraint
 
 val senumConstraintInitFull : StringSet.t -> senumConstraint
 
+val boolConstraintInitSingleton : bool -> boolConstraint
+
+val floatConstraintInitSingleton : float_std -> floatConstraint
+
+val senumConstraintInitSingleton :
+  StringSet.t -> string_enum -> senumConstraint
+
 type fConstraint =
 | CBool of boolConstraint
 | CFloat of floatConstraint
@@ -89,6 +96,8 @@ val constraintRightSplit :
   feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint
 
 val constraintInitFull : feature -> getFeatureKind -> fConstraint
+
+val constraintInitSingleton : feature -> getFeatureKind -> dom -> fConstraint
 
 type featureSpaceConstraint =
 | Coq_featureSpaceConstraintNil

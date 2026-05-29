@@ -144,6 +144,23 @@ let floatConstraintInitFull =
 let senumConstraintInitFull s =
   s
 
+(** val boolConstraintInitSingleton : bool -> boolConstraint **)
+
+let boolConstraintInitSingleton = function
+| true -> BTrue
+| false -> BFalse
+
+(** val floatConstraintInitSingleton : float_std -> floatConstraint **)
+
+let floatConstraintInitSingleton x =
+  FSingleton x
+
+(** val senumConstraintInitSingleton :
+    StringSet.t -> string_enum -> senumConstraint **)
+
+let senumConstraintInitSingleton _ =
+  StringSet.singleton
+
 type fConstraint =
 | CBool of boolConstraint
 | CFloat of floatConstraint
@@ -219,6 +236,17 @@ let constraintInitFull _ = function
 | Coq_isBooleanFeature -> CBool boolConstraintInitFull
 | Coq_isStringEnumFeature s -> CSEnum (s, (senumConstraintInitFull s))
 
+(** val constraintInitSingleton :
+    feature -> getFeatureKind -> dom -> fConstraint **)
+
+let constraintInitSingleton _ get x =
+  match get with
+  | Coq_isContinuousFeature ->
+    CFloat (floatConstraintInitSingleton (Obj.magic x))
+  | Coq_isBooleanFeature -> CBool (boolConstraintInitSingleton (Obj.magic x))
+  | Coq_isStringEnumFeature s ->
+    CSEnum (s, (senumConstraintInitSingleton s (Obj.magic x)))
+
 type featureSpaceConstraint =
 | Coq_featureSpaceConstraintNil
 | Coq_featureSpaceConstraintCons of feature * getFeatureKind * fConstraint
@@ -274,8 +302,12 @@ let rec witness _ _ = function
 
 let rec initConstraint _ x _ = function
 | Coq_featureVecNil -> Coq_featureSpaceConstraintNil
-| Coq_featureVecCons (f, get, _, n0, fs0, vs0) ->
-  let c = constraintInitFull f get in
+| Coq_featureVecCons (f, get, x0, n0, fs0, vs0) ->
+  let c =
+    if x (F1 n0)
+    then constraintInitFull f get
+    else constraintInitSingleton f get x0
+  in
   Coq_featureSpaceConstraintCons (f, get, c, n0, fs0,
   (initConstraint n0 (fun k0 -> x (FS (n0, k0))) fs0 vs0))
 
