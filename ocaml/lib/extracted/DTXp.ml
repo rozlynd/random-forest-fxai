@@ -268,22 +268,6 @@ let rec update _ _ cs i =
     | FS (n1, i0) ->
       Coq_featureSpaceConstraintCons (f, get, c, n1, fs0, (x i0 ap)))
 
-(** val splitFSConstraintLeft :
-    int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
-    featureSpaceConstraint **)
-
-let splitFSConstraintLeft n0 fs0 i t0 cs =
-  update n0 fs0 cs i (fun get ->
-    constraintLeftSplit (getFeature n0 fs0 i) get t0)
-
-(** val splitFSConstraintRight :
-    int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
-    featureSpaceConstraint **)
-
-let splitFSConstraintRight n0 fs0 i t0 cs =
-  update n0 fs0 cs i (fun get ->
-    constraintRightSplit (getFeature n0 fs0 i) get t0)
-
 (** val witness :
     int -> featureSig -> featureSpaceConstraint -> featureVec option **)
 
@@ -297,10 +281,26 @@ let rec witness _ _ = function
       | None -> None)
    | None -> None)
 
-(** val initConstraint :
+(** val splitLeft :
+    int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
+    featureSpaceConstraint **)
+
+let splitLeft n0 fs0 i t0 cs =
+  update n0 fs0 cs i (fun get ->
+    constraintLeftSplit (getFeature n0 fs0 i) get t0)
+
+(** val splitRight :
+    int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
+    featureSpaceConstraint **)
+
+let splitRight n0 fs0 i t0 cs =
+  update n0 fs0 cs i (fun get ->
+    constraintRightSplit (getFeature n0 fs0 i) get t0)
+
+(** val init :
     int -> (fin -> bool) -> featureSig -> featureVec -> featureSpaceConstraint **)
 
-let rec initConstraint _ x _ = function
+let rec init _ x _ = function
 | Coq_featureVecNil -> Coq_featureSpaceConstraintNil
 | Coq_featureVecCons (f, get, x0, n0, fs0, vs0) ->
   let c =
@@ -309,7 +309,7 @@ let rec initConstraint _ x _ = function
     else constraintInitSingleton f get x0
   in
   Coq_featureSpaceConstraintCons (f, get, c, n0, fs0,
-  (initConstraint n0 (fun k0 -> x (FS (n0, k0))) fs0 vs0))
+  (init n0 (fun k0 -> x (FS (n0, k0))) fs0 vs0))
 
 module DtWCXpCheckerImpl =
  functor (C:DT.DT) ->
@@ -325,18 +325,16 @@ module DtWCXpCheckerImpl =
   | DT.Leaf c1 -> if C.K.eq_dec c1 c0 then None else witness C.n C.fs c
   | DT.Node (i, test, dt1, dt2) ->
     if S.mem i x
-    then (match refute_aux v0 c0 x (splitFSConstraintLeft C.n C.fs i test c)
-                  dt1 with
+    then (match refute_aux v0 c0 x (splitLeft C.n C.fs i test c) dt1 with
           | Some r -> Some r
-          | None ->
-            refute_aux v0 c0 x (splitFSConstraintRight C.n C.fs i test c) dt2)
+          | None -> refute_aux v0 c0 x (splitRight C.n C.fs i test c) dt2)
     else let dt' = if featureTest' C.n C.fs v0 i test then dt1 else dt2 in
          refute_aux v0 c0 x c dt'
 
   (** val init : S.t -> featureVec -> featureSpaceConstraint **)
 
   let init x =
-    initConstraint S.n (fun i -> S.mem i x) C.fs
+    init S.n (fun i -> S.mem i x) C.fs
 
   (** val refute : C.t -> featureVec -> S.t -> featureVec option **)
 

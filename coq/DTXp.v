@@ -295,14 +295,6 @@ Section FeatureSpaceConstraint.
                 end fs cs (update cs)
         end.
 
-    Definition splitFSConstraintLeft {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
-            featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => update cs i (fun get => constraintLeftSplit get t).
-
-    Definition splitFSConstraintRight {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
-            featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => update cs i (fun get => constraintRightSplit get t).
-
     Fixpoint witness {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : option (featureVec fs) :=
         match cs with
         | featureSpaceConstraintNil => Some (featureVecNil)
@@ -317,7 +309,15 @@ Section FeatureSpaceConstraint.
             end
         end.
 
-    Fixpoint initConstraint {n : nat} (X : fin n -> bool) {fs : featureSig n} (vs : featureVec fs) : featureSpaceConstraint fs :=
+    Definition splitLeft {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
+            featureSpaceConstraint fs -> featureSpaceConstraint fs :=
+        fun cs => update cs i (fun get => constraintLeftSplit get t).
+
+    Definition splitRight {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
+            featureSpaceConstraint fs -> featureSpaceConstraint fs :=
+        fun cs => update cs i (fun get => constraintRightSplit get t).
+
+    Fixpoint init {n : nat} (X : fin n -> bool) {fs : featureSig n} (vs : featureVec fs) : featureSpaceConstraint fs :=
         match vs in @featureVec n fs return (fin n -> bool) -> featureSpaceConstraint fs with
         | featureVecNil => fun _ => featureSpaceConstraintNil
         | @featureVecCons f get x _ fs vs => fun X =>
@@ -325,7 +325,7 @@ Section FeatureSpaceConstraint.
                 if X F1 then constraintInitFull get
                 else constraintInitSingleton get x
             in
-            featureSpaceConstraintCons f get c (initConstraint (fun k => X (FS k)) vs)
+            featureSpaceConstraintCons f get c (init (fun k => X (FS k)) vs)
         end X.
 
 End FeatureSpaceConstraint.
@@ -349,9 +349,9 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
                 witness C
         | Node i test dt1 dt2 =>
             if S.mem i X then
-                match refute_aux v c0 X (splitFSConstraintLeft i test C) dt1 with
+                match refute_aux v c0 X (splitLeft i test C) dt1 with
                 | Some r => Some r
-                | None => refute_aux v c0 X (splitFSConstraintRight i test C) dt2
+                | None => refute_aux v c0 X (splitRight i test C) dt2
                 end
             else
                 let dt' :=
@@ -362,7 +362,7 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
         end.
 
     Definition init : S.t -> featureVec C.fs -> featureSpaceConstraint C.fs :=
-        fun X => initConstraint (fun i => S.mem i X).
+        fun X => init (fun i => S.mem i X).
 
     (* Search for a v' that gives a different prediction than v on the decision tree
        and such that v' agrees with v on the complement of X. *)

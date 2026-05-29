@@ -108,17 +108,17 @@ val update :
   int -> featureSig -> featureSpaceConstraint -> fin -> (getFeatureKind ->
   fConstraint -> fConstraint) -> featureSpaceConstraint
 
-val splitFSConstraintLeft :
-  int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
-  featureSpaceConstraint
-
-val splitFSConstraintRight :
-  int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
-  featureSpaceConstraint
-
 val witness : int -> featureSig -> featureSpaceConstraint -> featureVec option
 
-val initConstraint :
+val splitLeft :
+  int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
+  featureSpaceConstraint
+
+val splitRight :
+  int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
+  featureSpaceConstraint
+
+val init :
   int -> (fin -> bool) -> featureSig -> featureVec -> featureSpaceConstraint
 
 module DtWCXpCheckerImpl :
