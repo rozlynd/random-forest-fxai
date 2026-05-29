@@ -131,15 +131,15 @@ type featureSpaceConstraint =
 | Coq_featureSpaceConstraintCons of feature * getFeatureKind * fConstraint
    * int * featureSig * featureSpaceConstraint
 
-(** val mapOne :
+(** val update :
     int -> featureSig -> featureSpaceConstraint -> fin -> (getFeatureKind ->
     fConstraint -> fConstraint) -> featureSpaceConstraint **)
 
-let rec mapOne _ _ cs i =
+let rec update _ _ cs i =
   match cs with
   | Coq_featureSpaceConstraintNil -> (fun _ -> Coq_featureSpaceConstraintNil)
   | Coq_featureSpaceConstraintCons (f, get, c, n0, fs0, cs0) ->
-    let x = mapOne n0 fs0 cs0 in
+    let x = update n0 fs0 cs0 in
     (fun ap ->
     match i with
     | F1 n1 ->
@@ -152,14 +152,14 @@ let rec mapOne _ _ cs i =
     featureSpaceConstraint **)
 
 let splitFSConstraintLeft n0 fs0 i t0 cs =
-  mapOne n0 fs0 cs i (applyLSplit (getFeature n0 fs0 i) t0)
+  update n0 fs0 cs i (applyLSplit (getFeature n0 fs0 i) t0)
 
 (** val splitFSConstraintRight :
     int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
     featureSpaceConstraint **)
 
 let splitFSConstraintRight n0 fs0 i t0 cs =
-  mapOne n0 fs0 cs i (applyRSplit (getFeature n0 fs0 i) t0)
+  update n0 fs0 cs i (applyRSplit (getFeature n0 fs0 i) t0)
 
 (** val witness :
     int -> featureSig -> featureSpaceConstraint -> featureVec option **)

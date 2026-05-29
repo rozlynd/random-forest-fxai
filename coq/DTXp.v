@@ -105,7 +105,7 @@ Section FeatureSpaceConstraint.
             featureSpaceConstraint (featureSigCons f get fs).
 
     (* HERE BE DRAGONS *)
-    Local Fixpoint mapOne {n : nat} {fs : featureSig n}
+    Local Fixpoint update {n : nat} {fs : featureSig n}
                           (cs : featureSpaceConstraint fs) {struct cs} :
                             forall (i : fin n),
                                 (forall (get : getFeatureKind (getFeature fs i)),
@@ -132,16 +132,16 @@ Section FeatureSpaceConstraint.
                         featureSpaceConstraint (featureSigCons f get fs) with
                 | F1 => fun fs cs _ ap => featureSpaceConstraintCons f get (ap get c) cs
                 | FS i => fun fs cs k ap => featureSpaceConstraintCons f get c (k i ap)
-                end fs cs (mapOne cs)
+                end fs cs (update cs)
         end.
 
     Definition splitFSConstraintLeft {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
             featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => mapOne cs i (applyLSplit t).
+        fun cs => update cs i (applyLSplit t).
 
     Definition splitFSConstraintRight {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
             featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => mapOne cs i (applyRSplit t).
+        fun cs => update cs i (applyRSplit t).
 
     Fixpoint witness {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : option (featureVec fs) :=
         match cs with

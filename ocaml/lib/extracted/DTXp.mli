@@ -58,7 +58,7 @@ type featureSpaceConstraint =
 | Coq_featureSpaceConstraintCons of feature * getFeatureKind * fConstraint
    * int * featureSig * featureSpaceConstraint
 
-val mapOne :
+val update :
   int -> featureSig -> featureSpaceConstraint -> fin -> (getFeatureKind ->
   fConstraint -> fConstraint) -> featureSpaceConstraint
 
