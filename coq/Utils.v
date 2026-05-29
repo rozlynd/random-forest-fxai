@@ -390,7 +390,7 @@ End FinSetOn.
 
 Module Type FinSet := FinSig <+ FinSetOn.
 
-Module MakeFinSet (S : FinSig) : FinSetOn S.
+Module MakeFinSetOn (S : FinSig) : FinSetOn S.
 
     Module X := FinOT S.
     Include MSetList.Make X.
@@ -498,6 +498,12 @@ Module MakeFinSet (S : FinSig) : FinSetOn S.
         split; intros H abs; now apply H, HEs.
     Qed.
 
+End MakeFinSetOn.
+
+Module MakeFinSet (S : FinSig) : FinSet with Definition n := S.n.
+    Definition n := S.n.
+    Module F := MakeFinSetOn S.
+    Include F.
 End MakeFinSet.
 
 Module FinSetProperties (Import FS : FinSet).

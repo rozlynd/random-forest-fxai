@@ -111,7 +111,7 @@ module type FinSet =
   val shrink : (t -> bool) -> t -> t
  end
 
-module MakeFinSet :
+module MakeFinSetOn :
  functor (S:FinSig) ->
  sig
   module E :
@@ -179,3 +179,7 @@ module MakeFinSet :
 
   val shrink : (t -> bool) -> t -> t
  end
+
+module MakeFinSet :
+ functor (S:FinSig) ->
+ FinSet

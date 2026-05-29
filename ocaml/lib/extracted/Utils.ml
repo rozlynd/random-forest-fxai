@@ -171,7 +171,7 @@ module type FinSet =
   val shrink : (t -> bool) -> t -> t
  end
 
-module MakeFinSet =
+module MakeFinSetOn =
  functor (S:FinSig) ->
  struct
   module X = FinOT(S)
@@ -779,6 +779,374 @@ module MakeFinSet =
     (match filtered_var with
      | Some r -> r
      | None -> assert false (* absurd case *))
+
+  (** val shrink_spec1 : __ **)
+
+  let shrink_spec1 =
+    __
+
+  (** val shrink_spec2 : __ **)
+
+  let shrink_spec2 =
+    __
+
+  (** val shrink_spec3 : __ **)
+
+  let shrink_spec3 =
+    __
+
+  (** val compl_compat : __ **)
+
+  let compl_compat =
+    __
+ end
+
+module MakeFinSet =
+ functor (S:FinSig) ->
+ struct
+  (** val n : int **)
+
+  let n =
+    S.n
+
+  module F = MakeFinSetOn(S)
+
+  module E = F.E
+
+  type elt = E.t
+
+  type t = F.t
+
+  (** val empty : t **)
+
+  let empty =
+    F.empty
+
+  (** val is_empty : t -> bool **)
+
+  let is_empty =
+    F.is_empty
+
+  (** val mem : elt -> t -> bool **)
+
+  let mem =
+    F.mem
+
+  (** val add : elt -> t -> t **)
+
+  let add =
+    F.add
+
+  (** val singleton : elt -> t **)
+
+  let singleton =
+    F.singleton
+
+  (** val remove : elt -> t -> t **)
+
+  let remove =
+    F.remove
+
+  (** val union : t -> t -> t **)
+
+  let union =
+    F.union
+
+  (** val inter : t -> t -> t **)
+
+  let inter =
+    F.inter
+
+  (** val diff : t -> t -> t **)
+
+  let diff =
+    F.diff
+
+  (** val equal : t -> t -> bool **)
+
+  let equal =
+    F.equal
+
+  (** val subset : t -> t -> bool **)
+
+  let subset =
+    F.subset
+
+  (** val fold : (elt -> 'a1 -> 'a1) -> t -> 'a1 -> 'a1 **)
+
+  let fold =
+    F.fold
+
+  (** val for_all : (elt -> bool) -> t -> bool **)
+
+  let for_all =
+    F.for_all
+
+  (** val exists_ : (elt -> bool) -> t -> bool **)
+
+  let exists_ =
+    F.exists_
+
+  (** val filter : (elt -> bool) -> t -> t **)
+
+  let filter =
+    F.filter
+
+  (** val partition : (elt -> bool) -> t -> t * t **)
+
+  let partition =
+    F.partition
+
+  (** val cardinal : t -> int **)
+
+  let cardinal =
+    F.cardinal
+
+  (** val elements : t -> elt list **)
+
+  let elements =
+    F.elements
+
+  (** val choose : t -> elt option **)
+
+  let choose =
+    F.choose
+
+  type coq_In = __
+
+  (** val coq_In_compat : __ **)
+
+  let coq_In_compat =
+    __
+
+  type coq_Equal = __
+
+  type coq_Subset = __
+
+  type coq_Empty = __
+
+  type coq_For_all = __
+
+  type coq_Exists = __
+
+  type eq = __
+
+  (** val eq_equiv : __ **)
+
+  let eq_equiv =
+    __
+
+  (** val eq_dec : t -> t -> bool **)
+
+  let eq_dec =
+    F.eq_dec
+
+  (** val mem_spec : __ **)
+
+  let mem_spec =
+    __
+
+  (** val equal_spec : __ **)
+
+  let equal_spec =
+    __
+
+  (** val subset_spec : __ **)
+
+  let subset_spec =
+    __
+
+  (** val empty_spec : __ **)
+
+  let empty_spec =
+    __
+
+  (** val is_empty_spec : __ **)
+
+  let is_empty_spec =
+    __
+
+  (** val add_spec : __ **)
+
+  let add_spec =
+    __
+
+  (** val remove_spec : __ **)
+
+  let remove_spec =
+    __
+
+  (** val singleton_spec : __ **)
+
+  let singleton_spec =
+    __
+
+  (** val union_spec : __ **)
+
+  let union_spec =
+    __
+
+  (** val inter_spec : __ **)
+
+  let inter_spec =
+    __
+
+  (** val diff_spec : __ **)
+
+  let diff_spec =
+    __
+
+  (** val fold_spec : __ **)
+
+  let fold_spec =
+    __
+
+  (** val cardinal_spec : __ **)
+
+  let cardinal_spec =
+    __
+
+  (** val filter_spec : __ **)
+
+  let filter_spec =
+    __
+
+  (** val for_all_spec : __ **)
+
+  let for_all_spec =
+    __
+
+  (** val exists_spec : __ **)
+
+  let exists_spec =
+    __
+
+  (** val partition_spec1 : __ **)
+
+  let partition_spec1 =
+    __
+
+  (** val partition_spec2 : __ **)
+
+  let partition_spec2 =
+    __
+
+  (** val elements_spec1 : __ **)
+
+  let elements_spec1 =
+    __
+
+  (** val elements_spec2w : __ **)
+
+  let elements_spec2w =
+    __
+
+  (** val choose_spec1 : __ **)
+
+  let choose_spec1 =
+    __
+
+  (** val choose_spec2 : __ **)
+
+  let choose_spec2 =
+    __
+
+  (** val compare : t -> t -> comparison **)
+
+  let compare =
+    F.compare
+
+  (** val min_elt : t -> elt option **)
+
+  let min_elt =
+    F.min_elt
+
+  (** val max_elt : t -> elt option **)
+
+  let max_elt =
+    F.max_elt
+
+  type lt = __
+
+  (** val lt_strorder : __ **)
+
+  let lt_strorder =
+    __
+
+  (** val lt_compat : __ **)
+
+  let lt_compat =
+    __
+
+  (** val compare_spec : __ **)
+
+  let compare_spec =
+    __
+
+  (** val elements_spec2 : __ **)
+
+  let elements_spec2 =
+    __
+
+  (** val min_elt_spec1 : __ **)
+
+  let min_elt_spec1 =
+    __
+
+  (** val min_elt_spec2 : __ **)
+
+  let min_elt_spec2 =
+    __
+
+  (** val min_elt_spec3 : __ **)
+
+  let min_elt_spec3 =
+    __
+
+  (** val max_elt_spec1 : __ **)
+
+  let max_elt_spec1 =
+    __
+
+  (** val max_elt_spec2 : __ **)
+
+  let max_elt_spec2 =
+    __
+
+  (** val max_elt_spec3 : __ **)
+
+  let max_elt_spec3 =
+    __
+
+  (** val choose_spec3 : __ **)
+
+  let choose_spec3 =
+    __
+
+  (** val all : t **)
+
+  let all =
+    F.all
+
+  (** val compl : t -> t **)
+
+  let compl =
+    F.compl
+
+  (** val shrink : (t -> bool) -> t -> t **)
+
+  let shrink =
+    F.shrink
+
+  (** val coq_In_all : __ **)
+
+  let coq_In_all =
+    __
+
+  (** val coq_In_compl : __ **)
+
+  let coq_In_compl =
+    __
 
   (** val shrink_spec1 : __ **)
 
