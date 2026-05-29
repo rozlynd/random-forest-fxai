@@ -1,3 +1,4 @@
+open FloatUtils
 open PrimFloat
 open Specif
 open Utils
@@ -18,10 +19,18 @@ type testIndex = __
 let boolean_feature =
   Obj.magic (fun _ b -> b)
 
+type float_test =
+  float_std
+  (* singleton inductive, whose constructor was float_lt *)
+
 (** val float_feature : feature **)
 
 let float_feature t0 pat =
   ltb (Obj.magic pat) (Obj.magic t0)
+
+type string_enum_test =
+  StringSet.elt -> bool
+  (* singleton inductive, whose constructor was subset_mem *)
 
 (** val string_enum_feature : StringSet.t -> feature **)
 

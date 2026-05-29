@@ -14,6 +14,8 @@ module StringOT = String_as_OT
 
 module StringSet = Make(StringOT)
 
+type string_enum = string
+
 type 'a nelist =
 | Coq_necons of 'a * 'a list
 

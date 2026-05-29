@@ -14,87 +14,248 @@ End DTInputProblem.
 
 Section FeatureSpaceConstraint.
 
-    Variant floatRange : Type :=
-    | rangeUpperBound (b : float_std) : floatRange (* ]-inf; b[ *)
-    | rangeLowerBound (a : float_std) : floatRange (* [a; +inf[ *)
-    | rangeBounds (a b : float_std) : (proj1_sig a <? proj1_sig b)%float = true -> floatRange. (* [a; b[ where a < b *)
+    (* Representations for feature constraints *)
+
+    Variant boolConstraint : Type :=
+    | BEmpty
+    | BTrue
+    | BFalse
+    | BAny.
+
+    Variant floatConstraint : Type :=
+    | FEmpty
+    | FSingleton (a : float_std)
+    | FRange (a b : float_std) (p : (proj1_sig a <? proj1_sig b)%float = true). (* [ a; b [ \ { -inf } *)
+
+    Variant senumConstraint (s : StringSet.t) : Type :=
+    | SEnum (p : StringSet.t) (q : StringSet.Subset p s).
+
+
+    (* Get a witness satisfying some constraint if one exists *)
+
+    Definition boolConstraintWitness (c : boolConstraint) : option bool :=
+        match c with
+        | BEmpty => None
+        | BTrue | BAny => Some true
+        | BFalse => Some false
+        end.
+
+    Program Definition floatConstraintWitness (c : floatConstraint) : option float_std :=
+        match c with
+        | FEmpty => None
+        | FSingleton a => Some a
+        | FRange a b p =>
+            (if is_infinity a then
+                if is_infinity b then
+                    Some (exist _ 0.0 _)
+                else
+                    Some (exist _ (next_down (proj1_sig b)) _)
+            else
+                Some a)%float
+        end.
+    Next Obligation. Admitted.
+
+    Program Definition senumConstraintWitness {s : StringSet.t} (c : senumConstraint s) : option (string_enum s) :=
+        match c with
+        | SEnum _ p q =>
+            match StringSet.choose p with
+            | None => None
+            | Some x => Some (exist _ x _)
+            end
+        end.
+    Next Obligation. now apply q, choose_1. Qed.
+
+
+    (* Split constraints on the left or right *)
+
+    Definition boolConstraintLeftSplit (t : boolean_test) (c : boolConstraint) : boolConstraint :=
+        match c with
+        | BEmpty | BFalse => BEmpty
+        | BTrue | BAny => BTrue
+        end.
+
+    Definition boolConstraintRightSplit (t : boolean_test) (c : boolConstraint) : boolConstraint :=
+        match c with
+        | BEmpty | BTrue => BEmpty
+        | BFalse | BAny => BFalse
+        end.
+
+    Program Definition floatConstraintLeftSplit (t : float_test) (c : floatConstraint) : floatConstraint :=
+        let '(float_lt x) := t in
+        if is_infinity (proj1_sig x) then
+            if get_sign (proj1_sig x) then
+                c
+            else
+                FEmpty
+        else
+            match c with
+            | FEmpty => FEmpty
+            | FSingleton a =>
+                if proj1_sig a <? proj1_sig x then
+                    FSingleton a
+                else
+                    FEmpty
+            | FRange a b p =>
+                if proj1_sig a <? proj1_sig x then
+                    if proj1_sig b <? proj1_sig x then
+                        FRange a b p
+                    else
+                        FRange a x _
+                else
+                    FEmpty
+            end%float.
+    Next Obligation. Admitted.
+
+    Program Definition floatConstraintRightSplit (t : float_test) (c : floatConstraint) : floatConstraint :=
+        let '(float_lt x) := t in
+        if is_infinity (proj1_sig x) then
+            if get_sign (proj1_sig x) then
+                FEmpty
+            else
+                c
+        else
+            match c with
+            | FEmpty => FEmpty
+            | FSingleton a =>
+                if proj1_sig a <? proj1_sig x then
+                    FEmpty
+                else
+                    FSingleton a
+            | FRange a b p =>
+                if proj1_sig b <? proj1_sig x then
+                    FEmpty
+                else
+                    if proj1_sig a <? proj1_sig x then
+                        FRange x b _
+                    else
+                        FRange a b p
+            end%float.
+    Next Obligation. Admitted.
+
+    Program Definition senumConstraintLeftSplit {s : StringSet.t} (t : string_enum_test s) (c : senumConstraint s) : senumConstraint s :=
+        let '(subset_mem _ filt) := t in
+        match c with
+        | SEnum _ p q => SEnum s (StringSet.filter filt p) _
+        end.
+    Next Obligation.
+        intros x H; apply filter_1 in H; try auto.
+        intros y z E; now rewrite E.
+    Qed.
+
+    Program Definition senumConstraintRightSplit {s : StringSet.t} (t : string_enum_test s) (c : senumConstraint s) : senumConstraint s :=
+        let '(subset_mem _ filt) := t in
+        match c with
+        | SEnum _ p q => SEnum s (StringSet.filter (fun x => negb (filt x)) p) _
+        end.
+    Next Obligation.
+        intros x H; apply filter_1 in H; try auto.
+        intros y z E; now rewrite E.
+    Qed.
+
+
+    (* Initialize a constraint as either the full domain or a singleton value *)
+
+    Definition boolConstraintInitFull := BAny.
+    Program Definition floatConstraintInitFull := FRange (exist _ neg_infinity _) (exist _ infinity _) _.
+    Definition senumConstraintInitFull (s : StringSet.t) := SEnum s s (@Subset_refl _).
+
+    Definition boolConstraintInitSingleton (b : bool) :=
+        if b then BTrue
+        else BFalse.
+
+    Definition floatConstraintInitSingleton (x : float_std) := FSingleton x.
+
+    Program Definition senumConstraintInitSingleton {s : StringSet.t} (x : string_enum s) :=
+        SEnum s (StringSet.singleton (proj1_sig x)) _.
+    Next Obligation.
+        intros y H; destruct x;
+        apply singleton_1 in H; now rewrite <- H.
+    Qed.
+
+
+    (* Definitions of witness, left/right split and init on the sum-type of constraints *)
 
     Variant fConstraint : forall (f : feature), getFeatureKind f -> Type :=
-    | fcEmptyBool : fConstraint boolean_feature isBooleanFeature
-    | fcSingletonBool (b : bool) : fConstraint boolean_feature isBooleanFeature
-    | fcFullBool : fConstraint boolean_feature isBooleanFeature
+    | CBool : boolConstraint -> fConstraint boolean_feature isBooleanFeature
+    | CFloat : floatConstraint -> fConstraint float_feature isContinuousFeature
+    | CSEnum {s : StringSet.t} : senumConstraint s -> fConstraint (string_enum_feature s) (isStringEnumFeature s).
 
-    | fcEmptyFloat : fConstraint float_feature isContinuousFeature
-    | fcFullFloat : fConstraint float_feature isContinuousFeature
-    | fcRange (r : floatRange) : fConstraint float_feature isContinuousFeature
-    | fcSingletonFloat (x : float_std) : fConstraint float_feature isContinuousFeature
-    
-    | fcSEnum (s : StringSet.t) (p : StringSet.elt -> bool) : fConstraint (string_enum_feature s) (isStringEnumFeature s).
-
-    Definition applyLSplit {f : feature} (t : testIndex f)
-                           (get : getFeatureKind f) : fConstraint f get -> fConstraint f get :=
-        match get in getFeatureKind f return testIndex f -> fConstraint f get -> fConstraint f get with
-        | isContinuousFeature => fun t c =>
-            match c in fConstraint _ isContinuousFeature return float_test -> fConstraint _ isContinuousFeature with
-            | fcEmptyFloat => fun _ => fcEmptyFloat
-
-            | fcFullFloat => fun '(float_lt x) => fcRange (rangeUpperBound x)
-
-            | fcRange (rangeUpperBound b) => fun '(float_lt x) =>
-                if (proj1_sig x <? proj1_sig b)%float then fcRange (rangeUpperBound x)
-                else fcRange (rangeUpperBound b)
-
-            | fcRange (rangeLowerBound a) => fun '(float_lt x) =>
-                if (proj1_sig a <? proj1_sig x)%float then fcEmptyFloat
-                else fcFullFloat (* TODO *)
-
-            | fcRange (rangeBounds a b p) => fun _ => fcFullFloat (* TODO *)
-
-            | fcSingletonFloat y => fun '(float_lt x) =>
-                if (proj1_sig y <? proj1_sig x)%float then fcSingletonFloat y
-                else fcEmptyFloat
-            end t
-
-        | _ => fun t c => c (* TODO *)
-        end t.
-
-    Definition applyRSplit {f : feature} (t : testIndex f)
-                           (get : getFeatureKind f) : fConstraint f get -> fConstraint f get :=
-        match get in getFeatureKind f return testIndex f -> fConstraint f get -> fConstraint f get with
-        (* TODO *)
-        | _ => fun t c => c
-        end t.
-
-    Program Definition getWitness {f : feature} (get : getFeatureKind f) : fConstraint f get -> option (dom f) :=
-        match get in getFeatureKind f return fConstraint f _ -> option (dom f) with
+    Program Definition constraintWitness {f : feature} (get : getFeatureKind f) : fConstraint f get -> option (dom f) :=
+        match get in getFeatureKind f 
+                    return fConstraint f get -> option (dom f)
+        with
         | isBooleanFeature => fun c =>
             match c with
-            | fcEmptyBool => None
-            | fcSingletonBool b => Some b
-            | fcFullBool => Some true
+            | CBool c => boolConstraintWitness c
             | _ => False_rect _ _
             end
         | isContinuousFeature => fun c =>
             match c with
-            | fcEmptyFloat => None
-            | fcFullFloat => Some (exist _ 0.0 _)%float
-            | fcSingletonFloat x => Some x
-            | fcRange (rangeLowerBound a) => Some (exist _ (a + 1.0) _)%float
-            | fcRange (rangeUpperBound a) => Some (exist _ (a - 1.0) _)%float
-            | fcRange (rangeBounds a b p) => Some (exist _ ((a + b) / 2.0) _)%float
+            | CFloat c => floatConstraintWitness c
             | _ => False_rect _ _
             end
         | isStringEnumFeature s => fun c =>
             match c with
-            | fcSEnum s p =>
-                match StringSet.choose (StringSet.filter p s) with
-                | None => None
-                | Some e => Some (exist _ e _)
-                end
+            | CSEnum c => fun s => @senumConstraintWitness s c
+            | _ => fun _ => False_rect _ _
+            end s
+        end.
+    Admit Obligations.
+
+    Program Definition constraintLeftSplit {f : feature} (get : getFeatureKind f) : testIndex f -> fConstraint f get -> fConstraint f get :=
+        match get with
+        | isBooleanFeature => fun t c =>
+            match c with
+            | CBool c => CBool (boolConstraintLeftSplit t c)
+            | _ => False_rect _ _
+            end
+        | isContinuousFeature => fun t c =>
+            match c with
+            | CFloat c => CFloat (floatConstraintLeftSplit t c)
+            | _ => False_rect _ _
+            end
+        | isStringEnumFeature s => fun t c =>
+            match c with
+            | CSEnum c => CSEnum (senumConstraintLeftSplit t c)
             | _ => False_rect _ _
             end
         end.
     Admit Obligations.
+
+    Program Definition constraintRightSplit {f : feature} (get : getFeatureKind f) : testIndex f -> fConstraint f get -> fConstraint f get :=
+        match get with
+        | isBooleanFeature => fun t c =>
+            match c with
+            | CBool c => CBool (boolConstraintRightSplit t c)
+            | _ => False_rect _ _
+            end
+        | isContinuousFeature => fun t c =>
+            match c with
+            | CFloat c => CFloat (floatConstraintRightSplit t c)
+            | _ => False_rect _ _
+            end
+        | isStringEnumFeature s => fun t c =>
+            match c with
+            | CSEnum c => CSEnum (senumConstraintRightSplit t c)
+            | _ => False_rect _ _
+            end
+        end.
+    Admit Obligations.
+
+    Definition constraintInitFull {f : feature} (get : getFeatureKind f) : fConstraint f get :=
+        match get with
+        | isBooleanFeature => CBool boolConstraintInitFull
+        | isContinuousFeature => CFloat floatConstraintInitFull
+        | isStringEnumFeature s => CSEnum (senumConstraintInitFull s)
+        end.
+
+    (* ??? *)
+    Fail Definition constraintInitSingleton {f : feature} (get : getFeatureKind f) : dom f -> fConstraint f get :=
+        match get with
+        | isBooleanFeature => fun x => CBool (boolConstraintInitSingleton x)
+        | isContinuousFeature => fun x => CFloat (floatConstraintInitSingleton x)
+        | isStringEnumFeature s => fun x => CSEnum (senumConstraintInitSingleton s x)
+        end.
 
 
     Inductive featureSpaceConstraint : forall {n : nat}, featureSig n -> Type :=
@@ -137,17 +298,17 @@ Section FeatureSpaceConstraint.
 
     Definition splitFSConstraintLeft {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
             featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => update cs i (applyLSplit t).
+        fun cs => update cs i (fun get => constraintLeftSplit get t).
 
     Definition splitFSConstraintRight {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
             featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => update cs i (applyRSplit t).
+        fun cs => update cs i (fun get => constraintRightSplit get t).
 
     Fixpoint witness {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : option (featureVec fs) :=
         match cs with
         | featureSpaceConstraintNil => Some (featureVecNil)
         | featureSpaceConstraintCons f get c cs =>
-            match getWitness get c with
+            match constraintWitness get c with
             | None => None
             | Some x =>
                 match witness cs with
@@ -161,12 +322,9 @@ Section FeatureSpaceConstraint.
         match vs in @featureVec n fs return (fin n -> bool) -> featureSpaceConstraint fs with
         | featureVecNil => fun _ => featureSpaceConstraintNil
         | @featureVecCons f get x _ fs vs => fun X =>
-            let c : fConstraint f get :=
-                match get with
-                | isBooleanFeature => fcFullBool
-                | isContinuousFeature => fcFullFloat
-                | isStringEnumFeature s => fcSEnum s (fun _ => true)
-                end
+            let c :=
+                if X F1 then constraintInitFull get
+                else (*constraintInitSingleton*) constraintInitFull get
             in
             featureSpaceConstraintCons f get c (initConstraint (fun k => X (FS k)) vs)
         end X.

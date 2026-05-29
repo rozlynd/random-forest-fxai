@@ -1,3 +1,4 @@
+open FloatUtils
 open PrimFloat
 open Specif
 open Utils
@@ -14,7 +15,15 @@ type testIndex = __
 
 val boolean_feature : feature
 
+type float_test =
+  float_std
+  (* singleton inductive, whose constructor was float_lt *)
+
 val float_feature : feature
+
+type string_enum_test =
+  StringSet.elt -> bool
+  (* singleton inductive, whose constructor was subset_mem *)
 
 val string_enum_feature : StringSet.t -> feature
 

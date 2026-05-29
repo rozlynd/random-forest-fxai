@@ -15,6 +15,8 @@ module StringOT :
 module StringSet :
  Sets with module E = StringOT
 
+type string_enum = string
+
 type 'a nelist =
 | Coq_necons of 'a * 'a list
 

@@ -1,4 +1,5 @@
 open Bool
+open Datatypes
 open Equalities
 open Explainers
 open Features
@@ -30,28 +31,64 @@ module type DTInputProblem =
    FinSet
  end
 
-type floatRange =
-| Coq_rangeUpperBound of float_std
-| Coq_rangeLowerBound of float_std
-| Coq_rangeBounds of float_std * float_std
+type boolConstraint =
+| BEmpty
+| BTrue
+| BFalse
+| BAny
+
+type floatConstraint =
+| FEmpty
+| FSingleton of float_std
+| FRange of float_std * float_std
+
+type senumConstraint =
+  StringSet.t
+  (* singleton inductive, whose constructor was SEnum *)
+
+val boolConstraintWitness : boolConstraint -> bool option
+
+val floatConstraintWitness : floatConstraint -> float_std option
+
+val senumConstraintWitness :
+  StringSet.t -> senumConstraint -> string_enum option
+
+val boolConstraintLeftSplit : boolConstraint -> boolConstraint
+
+val boolConstraintRightSplit : boolConstraint -> boolConstraint
+
+val floatConstraintLeftSplit :
+  float_test -> floatConstraint -> floatConstraint
+
+val floatConstraintRightSplit :
+  float_test -> floatConstraint -> floatConstraint
+
+val senumConstraintLeftSplit :
+  StringSet.t -> string_enum_test -> senumConstraint -> senumConstraint
+
+val senumConstraintRightSplit :
+  StringSet.t -> string_enum_test -> senumConstraint -> senumConstraint
+
+val boolConstraintInitFull : boolConstraint
+
+val floatConstraintInitFull : floatConstraint
+
+val senumConstraintInitFull : StringSet.t -> senumConstraint
 
 type fConstraint =
-| Coq_fcEmptyBool
-| Coq_fcSingletonBool of bool
-| Coq_fcFullBool
-| Coq_fcEmptyFloat
-| Coq_fcFullFloat
-| Coq_fcRange of floatRange
-| Coq_fcSingletonFloat of float_std
-| Coq_fcSEnum of StringSet.t * (StringSet.elt -> bool)
+| CBool of boolConstraint
+| CFloat of floatConstraint
+| CSEnum of StringSet.t * senumConstraint
 
-val applyLSplit :
-  feature -> testIndex -> getFeatureKind -> fConstraint -> fConstraint
+val constraintWitness : feature -> getFeatureKind -> fConstraint -> dom option
 
-val applyRSplit :
-  feature -> testIndex -> getFeatureKind -> fConstraint -> fConstraint
+val constraintLeftSplit :
+  feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint
 
-val getWitness : feature -> getFeatureKind -> fConstraint -> dom option
+val constraintRightSplit :
+  feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint
+
+val constraintInitFull : feature -> getFeatureKind -> fConstraint
 
 type featureSpaceConstraint =
 | Coq_featureSpaceConstraintNil

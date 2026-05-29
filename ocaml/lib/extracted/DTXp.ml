@@ -1,4 +1,5 @@
 open Bool
+open Datatypes
 open Equalities
 open Explainers
 open Features
@@ -31,100 +32,192 @@ module type DTInputProblem =
    FinSet
  end
 
-type floatRange =
-| Coq_rangeUpperBound of float_std
-| Coq_rangeLowerBound of float_std
-| Coq_rangeBounds of float_std * float_std
+type boolConstraint =
+| BEmpty
+| BTrue
+| BFalse
+| BAny
+
+type floatConstraint =
+| FEmpty
+| FSingleton of float_std
+| FRange of float_std * float_std
+
+type senumConstraint =
+  StringSet.t
+  (* singleton inductive, whose constructor was SEnum *)
+
+(** val boolConstraintWitness : boolConstraint -> bool option **)
+
+let boolConstraintWitness = function
+| BEmpty -> None
+| BFalse -> Some false
+| _ -> Some true
+
+(** val floatConstraintWitness : floatConstraint -> float_std option **)
+
+let floatConstraintWitness = function
+| FEmpty -> None
+| FSingleton a -> Some a
+| FRange (a, b) ->
+  if is_infinity a
+  then if is_infinity b
+       then Some (Float64.of_float (0x0p+0))
+       else Some (next_down b)
+  else Some a
+
+(** val senumConstraintWitness :
+    StringSet.t -> senumConstraint -> string_enum option **)
+
+let senumConstraintWitness _ c =
+  let filtered_var = StringSet.choose c in
+  (match filtered_var with
+   | Some x -> Some x
+   | None -> None)
+
+(** val boolConstraintLeftSplit : boolConstraint -> boolConstraint **)
+
+let boolConstraintLeftSplit = function
+| BEmpty -> BEmpty
+| BFalse -> BEmpty
+| _ -> BTrue
+
+(** val boolConstraintRightSplit : boolConstraint -> boolConstraint **)
+
+let boolConstraintRightSplit = function
+| BEmpty -> BEmpty
+| BTrue -> BEmpty
+| _ -> BFalse
+
+(** val floatConstraintLeftSplit :
+    float_test -> floatConstraint -> floatConstraint **)
+
+let floatConstraintLeftSplit t0 c =
+  if is_infinity t0
+  then if get_sign t0 then c else FEmpty
+  else (match c with
+        | FEmpty -> FEmpty
+        | FSingleton a -> if ltb a t0 then FSingleton a else FEmpty
+        | FRange (a, b) ->
+          if ltb a t0
+          then if ltb b t0 then FRange (a, b) else FRange (a, t0)
+          else FEmpty)
+
+(** val floatConstraintRightSplit :
+    float_test -> floatConstraint -> floatConstraint **)
+
+let floatConstraintRightSplit t0 c =
+  if is_infinity t0
+  then if get_sign t0 then FEmpty else c
+  else (match c with
+        | FEmpty -> FEmpty
+        | FSingleton a -> if ltb a t0 then FEmpty else FSingleton a
+        | FRange (a, b) ->
+          if ltb b t0
+          then FEmpty
+          else if ltb a t0 then FRange (t0, b) else FRange (a, b))
+
+(** val senumConstraintLeftSplit :
+    StringSet.t -> string_enum_test -> senumConstraint -> senumConstraint **)
+
+let senumConstraintLeftSplit _ =
+  StringSet.filter
+
+(** val senumConstraintRightSplit :
+    StringSet.t -> string_enum_test -> senumConstraint -> senumConstraint **)
+
+let senumConstraintRightSplit _ t0 c =
+  StringSet.filter (fun x -> negb (t0 x)) c
+
+(** val boolConstraintInitFull : boolConstraint **)
+
+let boolConstraintInitFull =
+  BAny
+
+(** val floatConstraintInitFull : floatConstraint **)
+
+let floatConstraintInitFull =
+  FRange (neg_infinity, infinity)
+
+(** val senumConstraintInitFull : StringSet.t -> senumConstraint **)
+
+let senumConstraintInitFull s =
+  s
 
 type fConstraint =
-| Coq_fcEmptyBool
-| Coq_fcSingletonBool of bool
-| Coq_fcFullBool
-| Coq_fcEmptyFloat
-| Coq_fcFullFloat
-| Coq_fcRange of floatRange
-| Coq_fcSingletonFloat of float_std
-| Coq_fcSEnum of StringSet.t * (StringSet.elt -> bool)
+| CBool of boolConstraint
+| CFloat of floatConstraint
+| CSEnum of StringSet.t * senumConstraint
 
-(** val applyLSplit :
-    feature -> testIndex -> getFeatureKind -> fConstraint -> fConstraint **)
-
-let applyLSplit _ t0 = function
-| Coq_isContinuousFeature ->
-  (fun c ->
-    match c with
-    | Coq_fcSingletonBool x -> Obj.magic __ x t0
-    | Coq_fcEmptyFloat -> Coq_fcEmptyFloat
-    | Coq_fcFullFloat -> Coq_fcRange (Coq_rangeUpperBound (Obj.magic t0))
-    | Coq_fcRange r ->
-      (match r with
-       | Coq_rangeUpperBound b ->
-         let x = Obj.magic t0 in
-         if ltb x b
-         then Coq_fcRange (Coq_rangeUpperBound x)
-         else Coq_fcRange (Coq_rangeUpperBound b)
-       | Coq_rangeLowerBound a ->
-         if ltb a (Obj.magic t0) then Coq_fcEmptyFloat else Coq_fcFullFloat
-       | Coq_rangeBounds (_, _) -> Coq_fcFullFloat)
-    | Coq_fcSingletonFloat y ->
-      if ltb y (Obj.magic t0)
-      then Coq_fcSingletonFloat y
-      else Coq_fcEmptyFloat
-    | Coq_fcSEnum (x, x0) -> Obj.magic __ x x0 t0
-    | _ -> Obj.magic __ t0)
-| Coq_isBooleanFeature -> Obj.magic (fun c -> c)
-| Coq_isStringEnumFeature _ -> (fun c -> c)
-
-(** val applyRSplit :
-    feature -> testIndex -> getFeatureKind -> fConstraint -> fConstraint **)
-
-let applyRSplit _ _ _ c =
-  c
-
-(** val getWitness :
+(** val constraintWitness :
     feature -> getFeatureKind -> fConstraint -> dom option **)
 
-let getWitness _ get c =
+let constraintWitness _ get c =
   match get with
   | Coq_isContinuousFeature ->
     (match c with
-     | Coq_fcEmptyFloat -> None
-     | Coq_fcFullFloat -> Obj.magic (Some (Float64.of_float (0x0p+0)))
-     | Coq_fcRange r ->
-       (match r with
-        | Coq_rangeUpperBound a ->
-          let a0 = Obj.magic a in
-          Obj.magic (Some (sub a0 (Float64.of_float (0x1p+0))))
-        | Coq_rangeLowerBound a ->
-          let a0 = Obj.magic a in
-          Obj.magic (Some (add a0 (Float64.of_float (0x1p+0))))
-        | Coq_rangeBounds (a, b) ->
-          let a0 = Obj.magic a in
-          let b0 = Obj.magic b in
-          Obj.magic (Some (div (add a0 b0) (Float64.of_float (0x1p+1)))))
-     | Coq_fcSingletonFloat x -> let x0 = Obj.magic x in Obj.magic (Some x0)
-     | Coq_fcSEnum (_, _) -> assert false (* absurd case *)
+     | CFloat c0 ->
+       let c1 = Obj.magic c0 in Obj.magic floatConstraintWitness c1
      | _ -> assert false (* absurd case *))
   | Coq_isBooleanFeature ->
     (match c with
-     | Coq_fcEmptyBool -> None
-     | Coq_fcSingletonBool b -> let b0 = Obj.magic b in Obj.magic (Some b0)
-     | Coq_fcFullBool -> Obj.magic (Some true)
-     | Coq_fcSEnum (_, _) -> assert false (* absurd case *)
+     | CBool c0 -> let c1 = Obj.magic c0 in Obj.magic boolConstraintWitness c1
      | _ -> assert false (* absurd case *))
-  | Coq_isStringEnumFeature _ ->
+  | Coq_isStringEnumFeature s ->
     (match c with
-     | Coq_fcEmptyBool -> assert false (* absurd case *)
-     | Coq_fcSingletonBool _ -> assert false (* absurd case *)
-     | Coq_fcFullBool -> assert false (* absurd case *)
-     | Coq_fcSEnum (s, p) ->
-       let s0 = Obj.magic s in
-       let p0 = Obj.magic p in
-       let filtered_var = StringSet.choose (StringSet.filter p0 s0) in
-       (match filtered_var with
-        | Some e -> Obj.magic (Some e)
-        | None -> Obj.magic None)
+     | CSEnum (_, c0) ->
+       let c1 = Obj.magic c0 in
+       let s0 = Obj.magic s in Obj.magic senumConstraintWitness s0 c1
      | _ -> assert false (* absurd case *))
+
+(** val constraintLeftSplit :
+    feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint **)
+
+let constraintLeftSplit _ = function
+| Coq_isContinuousFeature ->
+  Obj.magic (fun t0 c ->
+    match c with
+    | CFloat c0 -> CFloat (floatConstraintLeftSplit t0 c0)
+    | _ -> assert false (* absurd case *))
+| Coq_isBooleanFeature ->
+  Obj.magic (fun _ c ->
+    match c with
+    | CBool c0 -> CBool (boolConstraintLeftSplit c0)
+    | _ -> assert false (* absurd case *))
+| Coq_isStringEnumFeature s ->
+  let s0 = Obj.magic s in
+  Obj.magic (fun t0 c ->
+    match c with
+    | CSEnum (_, c0) -> CSEnum (s0, (senumConstraintLeftSplit s0 t0 c0))
+    | _ -> assert false (* absurd case *))
+
+(** val constraintRightSplit :
+    feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint **)
+
+let constraintRightSplit _ = function
+| Coq_isContinuousFeature ->
+  Obj.magic (fun t0 c ->
+    match c with
+    | CFloat c0 -> CFloat (floatConstraintRightSplit t0 c0)
+    | _ -> assert false (* absurd case *))
+| Coq_isBooleanFeature ->
+  Obj.magic (fun _ c ->
+    match c with
+    | CBool c0 -> CBool (boolConstraintRightSplit c0)
+    | _ -> assert false (* absurd case *))
+| Coq_isStringEnumFeature s ->
+  let s0 = Obj.magic s in
+  Obj.magic (fun t0 c ->
+    match c with
+    | CSEnum (_, c0) -> CSEnum (s0, (senumConstraintRightSplit s0 t0 c0))
+    | _ -> assert false (* absurd case *))
+
+(** val constraintInitFull : feature -> getFeatureKind -> fConstraint **)
+
+let constraintInitFull _ = function
+| Coq_isContinuousFeature -> CFloat floatConstraintInitFull
+| Coq_isBooleanFeature -> CBool boolConstraintInitFull
+| Coq_isStringEnumFeature s -> CSEnum (s, (senumConstraintInitFull s))
 
 type featureSpaceConstraint =
 | Coq_featureSpaceConstraintNil
@@ -152,14 +245,16 @@ let rec update _ _ cs i =
     featureSpaceConstraint **)
 
 let splitFSConstraintLeft n0 fs0 i t0 cs =
-  update n0 fs0 cs i (applyLSplit (getFeature n0 fs0 i) t0)
+  update n0 fs0 cs i (fun get ->
+    constraintLeftSplit (getFeature n0 fs0 i) get t0)
 
 (** val splitFSConstraintRight :
     int -> featureSig -> fin -> testIndex -> featureSpaceConstraint ->
     featureSpaceConstraint **)
 
 let splitFSConstraintRight n0 fs0 i t0 cs =
-  update n0 fs0 cs i (applyRSplit (getFeature n0 fs0 i) t0)
+  update n0 fs0 cs i (fun get ->
+    constraintRightSplit (getFeature n0 fs0 i) get t0)
 
 (** val witness :
     int -> featureSig -> featureSpaceConstraint -> featureVec option **)
@@ -167,7 +262,7 @@ let splitFSConstraintRight n0 fs0 i t0 cs =
 let rec witness _ _ = function
 | Coq_featureSpaceConstraintNil -> Some Coq_featureVecNil
 | Coq_featureSpaceConstraintCons (f, get, c, n0, fs0, cs0) ->
-  (match getWitness f get c with
+  (match constraintWitness f get c with
    | Some x ->
      (match witness n0 fs0 cs0 with
       | Some vs -> Some (Coq_featureVecCons (f, get, x, n0, fs0, vs))
@@ -180,12 +275,7 @@ let rec witness _ _ = function
 let rec initConstraint _ x _ = function
 | Coq_featureVecNil -> Coq_featureSpaceConstraintNil
 | Coq_featureVecCons (f, get, _, n0, fs0, vs0) ->
-  let c =
-    match get with
-    | Coq_isContinuousFeature -> Coq_fcFullFloat
-    | Coq_isBooleanFeature -> Coq_fcFullBool
-    | Coq_isStringEnumFeature s -> Coq_fcSEnum (s, (fun _ -> true))
-  in
+  let c = constraintInitFull f get in
   Coq_featureSpaceConstraintCons (f, get, c, n0, fs0,
   (initConstraint n0 (fun k0 -> x (FS (n0, k0))) fs0 vs0))
 
