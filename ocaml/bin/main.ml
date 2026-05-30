@@ -1,6 +1,10 @@
 open Rfxp
 open Driver
 
+let as_list (e : Input.S.t) : int list =
+  let l = Input.S.elements e in
+  List.map (fun f -> Extracted.Utils.to_nat Input.S.n f + 1) l
+
 let string_of_int_list l =
   let rec aux acc l =
     match l with

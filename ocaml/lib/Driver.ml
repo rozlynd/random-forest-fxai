@@ -75,7 +75,3 @@ module Input : DTInputProblem = struct
 end
 
 module Find = DtAXpFinder (Input)
-
-let as_list e =
-  let l = Input.S.elements e in
-  List.map (fun f -> to_nat Input.S.n f + 1) l
