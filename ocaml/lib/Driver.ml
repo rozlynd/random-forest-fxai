@@ -7,16 +7,20 @@ open Explainers
 open DT
 open DTXp
 
+let set_of_string_list l =
+  List.fold_right StringSet.add l StringSet.empty
+
+let s = set_of_string_list [ "s1" ; "s2" ; "s3" ]
+
 module F : FeatureSig = struct
 
-  let n = 4
+  let n = 3
 
   let fs =
-    Coq_featureSigCons (3, boolean_feature, Coq_isBooleanFeature,   (* blocked-arteries *)
-    Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,   (* good-blood-circulation *)
-    Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,   (* chest-pain *)
-    Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,  (* weight *)
-    Coq_featureSigNil))))
+    Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
+    Coq_featureSigCons (1, float_feature, Coq_isBooleanFeature,
+    Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
+    Coq_featureSigNil)))
 
 end
 
@@ -45,32 +49,36 @@ module Input : DTInputProblem = struct
   let to_fin = to_fin' F.n
 
   let k =
-    Node (to_fin 1, Obj.repr (),
+    Node (to_fin 1, Obj.repr 20.0,
+      Node (to_fin 2, Obj.repr (fun e -> List.mem e [ "s1" ; "s2" ]),
+        Node (to_fin 1, Obj.repr (-10.0),
+          Leaf "1",
+          Leaf "0"),
+        Leaf "0"),
       Node (to_fin 0, Obj.repr (),
-        Leaf "Yes",
-        Leaf "No"),
-      Node (to_fin 2, Obj.repr (),
-        Leaf "Yes",
-        Leaf "No"))
+        Node (to_fin 2, Obj.repr (fun e -> List.mem e [ "s1" ]),
+          Leaf "1",
+          Leaf "0"),
+        Leaf "0"))
 
   let v =
-    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 3,
-      (Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
-      (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
-      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
-      Coq_featureSigNil)))))),
-    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr false, 2,
-      (Coq_featureSigCons (1, boolean_feature, Coq_isBooleanFeature,
-      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 2,
+      (Coq_featureSigCons (1, float_feature, Coq_isContinuousFeature,
+      (Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
       Coq_featureSigNil)))),
-    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 1,
-      (Coq_featureSigCons (0, float_feature, Coq_isContinuousFeature,
+    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr 30.0, 1,
+      (Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
       Coq_featureSigNil)),
-    Coq_featureVecCons (float_feature, Coq_isContinuousFeature, Obj.repr 70.0, 0,
+    Coq_featureVecCons (string_enum_feature s, Coq_isStringEnumFeature s, Obj.repr "s2", 0,
       Coq_featureSigNil,
-    Coq_featureVecNil))))
+    Coq_featureVecNil)))
 
   module S = MakeFinSet (struct let n = n end)
+
+  (* EXPECTED:
+    AXps : [ 2, 3 ]
+    CXps : [ 2 ], [ 3 ]
+  *)
 
 end
 
