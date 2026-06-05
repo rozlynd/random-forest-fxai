@@ -31,6 +31,26 @@ Section FeatureSpaceConstraint.
     | SEnum (p : StringSet.t) (q : StringSet.Subset p s).
 
 
+    (* Check if a constraint is unsatisfiable *)
+
+    Definition boolConstraintEmpty (c : boolConstraint) : bool :=
+        match c with
+        | BEmpty => true
+        | _ => false
+        end.
+
+    Definition floatConstraintEmpty (c : floatConstraint) : bool :=
+        match c with
+        | FEmpty => true
+        | _ => false
+        end.
+
+    Definition senumConstraintEmpty {s : StringSet.t} (c : senumConstraint s) : bool :=
+        match c with
+        | SEnum _ p _ => StringSet.is_empty p
+        end.
+
+
     (* Get a witness satisfying some constraint if one exists *)
 
     Definition boolConstraintWitness (c : boolConstraint) : option bool :=
@@ -180,6 +200,28 @@ Section FeatureSpaceConstraint.
     | CFloat : floatConstraint -> fConstraint float_feature isContinuousFeature
     | CSEnum {s : StringSet.t} : senumConstraint s -> fConstraint (string_enum_feature s) (isStringEnumFeature s).
 
+    Program Definition constraintEmpty {f : feature} (get : getFeatureKind f) : fConstraint f get -> bool :=
+        match get in getFeatureKind f
+                    return fConstraint f get -> bool
+        with
+        | isBooleanFeature => fun c =>
+            match c with
+            | CBool c => boolConstraintEmpty c
+            | _ => False_rect _ _
+            end
+        | isContinuousFeature => fun c =>
+            match c with
+            | CFloat c => floatConstraintEmpty c
+            | _ => False_rect _ _
+            end
+        | isStringEnumFeature s => fun c =>
+            match c with
+            | CSEnum c => fun s => @senumConstraintEmpty s c
+            | _ => fun _ => False_rect _ _
+            end s
+        end.
+    Admit Obligations.
+
     Program Definition constraintWitness {f : feature} (get : getFeatureKind f) : fConstraint f get -> option (dom f) :=
         match get in getFeatureKind f 
                     return fConstraint f get -> option (dom f)
@@ -295,6 +337,13 @@ Section FeatureSpaceConstraint.
                 end fs cs (update cs)
         end.
 
+    Fixpoint empty {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : bool :=
+        match cs with
+        | featureSpaceConstraintNil => true
+        | featureSpaceConstraintCons f get c cs =>
+            constraintEmpty get c && empty cs
+        end.
+
     Fixpoint witness {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : option (featureVec fs) :=
         match cs with
         | featureSpaceConstraintNil => Some (featureVecNil)
@@ -337,7 +386,6 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Fixpoint refute_aux
             (v : featureVec C.fs)
             (c0 : C.K.t)
-            (X : S.t)
             (C : featureSpaceConstraint C.fs)
             (dt : C.t)
             : option (featureVec C.fs) :=
@@ -348,17 +396,22 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
             else
                 witness C
         | Node i test dt1 dt2 =>
-            if S.mem i X then
-                match refute_aux v c0 X (splitLeft i test C) dt1 with
-                | Some r => Some r
-                | None => refute_aux v c0 X (splitRight i test C) dt2
-                end
+            let Cleft := splitLeft i test C in
+            let CRight := splitRight i test C in
+            if empty Cleft then
+                if empty CRight then
+                    None
+                else
+                    refute_aux v c0 CRight dt2
             else
-                let dt' :=
-                    if featureTest' v i test then dt1
-                    else dt2
-                in
-                refute_aux v c0 X C dt'
+                match refute_aux v c0 Cleft dt1 with
+                | Some r => Some r
+                | None =>
+                    if empty CRight then
+                        None
+                    else
+                        refute_aux v c0 CRight dt2
+                end
         end.
 
     Definition init : S.t -> featureVec C.fs -> featureSpaceConstraint C.fs :=
@@ -367,7 +420,7 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     (* Search for a v' that gives a different prediction than v on the decision tree
        and such that v' agrees with v on the complement of X. *)
     Definition refute (dt : C.t) (v : featureVec C.fs) (X : S.t) : option (featureVec C.fs) :=
-        refute_aux v (C.eval dt v) X (init X v) dt.
+        refute_aux v (C.eval dt v) (init X v) dt.
 
     Theorem refute_success_agrees :
         forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),

@@ -46,6 +46,12 @@ type senumConstraint =
   StringSet.t
   (* singleton inductive, whose constructor was SEnum *)
 
+val boolConstraintEmpty : boolConstraint -> bool
+
+val floatConstraintEmpty : floatConstraint -> bool
+
+val senumConstraintEmpty : StringSet.t -> senumConstraint -> bool
+
 val boolConstraintWitness : boolConstraint -> bool option
 
 val floatConstraintWitness : floatConstraint -> float_std option
@@ -87,6 +93,8 @@ type fConstraint =
 | CFloat of floatConstraint
 | CSEnum of StringSet.t * senumConstraint
 
+val constraintEmpty : feature -> getFeatureKind -> fConstraint -> bool
+
 val constraintWitness : feature -> getFeatureKind -> fConstraint -> dom option
 
 val constraintLeftSplit :
@@ -107,6 +115,8 @@ type featureSpaceConstraint =
 val update :
   int -> featureSig -> featureSpaceConstraint -> fin -> (getFeatureKind ->
   fConstraint -> fConstraint) -> featureSpaceConstraint
+
+val empty : int -> featureSig -> featureSpaceConstraint -> bool
 
 val witness : int -> featureSig -> featureSpaceConstraint -> featureVec option
 
@@ -130,8 +140,7 @@ module DtWCXpCheckerImpl :
    end
 
   val refute_aux :
-    featureVec -> C.K.t -> S.t -> featureSpaceConstraint -> C.t -> featureVec
-    option
+    featureVec -> C.K.t -> featureSpaceConstraint -> C.t -> featureVec option
 
   val init : S.t -> featureVec -> featureSpaceConstraint
 

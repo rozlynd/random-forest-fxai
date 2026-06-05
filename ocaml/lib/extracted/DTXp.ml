@@ -47,6 +47,23 @@ type senumConstraint =
   StringSet.t
   (* singleton inductive, whose constructor was SEnum *)
 
+(** val boolConstraintEmpty : boolConstraint -> bool **)
+
+let boolConstraintEmpty = function
+| BEmpty -> true
+| _ -> false
+
+(** val floatConstraintEmpty : floatConstraint -> bool **)
+
+let floatConstraintEmpty = function
+| FEmpty -> true
+| _ -> false
+
+(** val senumConstraintEmpty : StringSet.t -> senumConstraint -> bool **)
+
+let senumConstraintEmpty _ =
+  StringSet.is_empty
+
 (** val boolConstraintWitness : boolConstraint -> bool option **)
 
 let boolConstraintWitness = function
@@ -166,6 +183,23 @@ type fConstraint =
 | CFloat of floatConstraint
 | CSEnum of StringSet.t * senumConstraint
 
+(** val constraintEmpty : feature -> getFeatureKind -> fConstraint -> bool **)
+
+let constraintEmpty _ get c =
+  match get with
+  | Coq_isContinuousFeature ->
+    (match c with
+     | CFloat c0 -> floatConstraintEmpty c0
+     | _ -> assert false (* absurd case *))
+  | Coq_isBooleanFeature ->
+    (match c with
+     | CBool c0 -> boolConstraintEmpty c0
+     | _ -> assert false (* absurd case *))
+  | Coq_isStringEnumFeature s ->
+    (match c with
+     | CSEnum (_, c0) -> senumConstraintEmpty s c0
+     | _ -> assert false (* absurd case *))
+
 (** val constraintWitness :
     feature -> getFeatureKind -> fConstraint -> dom option **)
 
@@ -268,6 +302,13 @@ let rec update _ _ cs i =
     | FS (n1, i0) ->
       Coq_featureSpaceConstraintCons (f, get, c, n1, fs0, (x i0 ap)))
 
+(** val empty : int -> featureSig -> featureSpaceConstraint -> bool **)
+
+let rec empty _ _ = function
+| Coq_featureSpaceConstraintNil -> true
+| Coq_featureSpaceConstraintCons (f, get, c, n0, fs0, cs0) ->
+  (&&) (constraintEmpty f get c) (empty n0 fs0 cs0)
+
 (** val witness :
     int -> featureSig -> featureSpaceConstraint -> featureVec option **)
 
@@ -318,18 +359,22 @@ module DtWCXpCheckerImpl =
   module FD = FeatureSigDefs(C)(S)
 
   (** val refute_aux :
-      featureVec -> C.K.t -> S.t -> featureSpaceConstraint -> C.t ->
-      featureVec option **)
+      featureVec -> C.K.t -> featureSpaceConstraint -> C.t -> featureVec
+      option **)
 
-  let rec refute_aux v0 c0 x c = function
+  let rec refute_aux v0 c0 c = function
   | DT.Leaf c1 -> if C.K.eq_dec c1 c0 then None else witness C.n C.fs c
   | DT.Node (i, test, dt1, dt2) ->
-    if S.mem i x
-    then (match refute_aux v0 c0 x (splitLeft C.n C.fs i test c) dt1 with
+    let cleft = splitLeft C.n C.fs i test c in
+    let cRight = splitRight C.n C.fs i test c in
+    if empty C.n C.fs cleft
+    then if empty C.n C.fs cRight then None else refute_aux v0 c0 cRight dt2
+    else (match refute_aux v0 c0 cleft dt1 with
           | Some r -> Some r
-          | None -> refute_aux v0 c0 x (splitRight C.n C.fs i test c) dt2)
-    else let dt' = if featureTest' C.n C.fs v0 i test then dt1 else dt2 in
-         refute_aux v0 c0 x c dt'
+          | None ->
+            if empty C.n C.fs cRight
+            then None
+            else refute_aux v0 c0 cRight dt2)
 
   (** val init : S.t -> featureVec -> featureSpaceConstraint **)
 
@@ -339,7 +384,7 @@ module DtWCXpCheckerImpl =
   (** val refute : C.t -> featureVec -> S.t -> featureVec option **)
 
   let refute dt0 v0 x =
-    refute_aux v0 (C.eval dt0 v0) x (init x v0) dt0
+    refute_aux v0 (C.eval dt0 v0) (init x v0) dt0
  end
 
 module DtWCXpChecker =
