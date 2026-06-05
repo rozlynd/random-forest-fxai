@@ -193,6 +193,63 @@ Section FeatureSpaceConstraint.
     Qed.
 
 
+    (* Facts about individual constraints *)
+
+    Theorem boolConstraintWitnessNotEmpty :
+        forall (c : boolConstraint),
+            boolConstraintEmpty c = false <->
+                exists (x : bool), boolConstraintWitness c = Some x.
+    Proof.
+        intros c; destruct c; split; simpl; intros H;
+            try reflexivity;
+            try discriminate;
+            try (now eexists);
+        destruct H as (x & H); discriminate.
+    Qed.
+
+    Theorem boolConstraintEmptySplit :
+        forall (t : boolean_test) (c : boolConstraint),
+            boolConstraintEmpty c =
+                (boolConstraintEmpty (boolConstraintLeftSplit t c)
+                && boolConstraintEmpty (boolConstraintRightSplit t c))%bool.
+    Proof. intros t c; destruct c; reflexivity. Qed.
+
+    Theorem boolConstraintWitnessLeftSplit :
+        forall (t : boolean_test) (c : boolConstraint) (x : bool),
+            boolConstraintWitness (boolConstraintLeftSplit t c) = Some x ->
+                tests boolean_feature t x = true.
+    Proof.
+        intros t c x H; destruct c; destruct t; simpl in H;
+        inversion H; reflexivity.
+    Qed.
+
+    Theorem boolConstraintWitnessRightSplit :
+        forall (t : boolean_test) (c : boolConstraint) (x : bool),
+            boolConstraintWitness (boolConstraintRightSplit t c) = Some x ->
+                tests boolean_feature t x = false.
+    Proof.
+        intros t c x H; destruct c; destruct t; simpl in H;
+        inversion H; reflexivity.
+    Qed.
+
+    Theorem boolConstraintInitFullNotEmpty :
+        boolConstraintEmpty boolConstraintInitFull = false.
+    Proof. reflexivity. Qed.
+
+    Theorem boolConstraintWitnessSingleton :
+        forall (x : bool),
+            boolConstraintWitness (boolConstraintInitSingleton x) = Some x.
+    Proof. intros x; destruct x; reflexivity. Qed.
+
+    Corollary boolConstraintInitSingletonNotEmpty :
+        forall (x : bool),
+            boolConstraintEmpty (boolConstraintInitSingleton x) = false.
+    Proof.
+        intros x; apply boolConstraintWitnessNotEmpty;
+        rewrite boolConstraintWitnessSingleton; now eexists.
+    Qed.
+
+
     (* Definitions of witness, left/right split and init on the sum-type of constraints *)
 
     Variant fConstraint : forall (f : feature), getFeatureKind f -> Type :=
