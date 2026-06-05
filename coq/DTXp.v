@@ -436,6 +436,46 @@ Section FeatureSpaceConstraint.
             featureSpaceConstraintCons f get c (init (fun k => X (FS k)) vs)
         end X.
 
+
+    Theorem constraintSpaceWitnessNotEmpty :
+        forall {n : nat} (fs : featureSig n) (cs : featureSpaceConstraint fs),
+            empty cs = false <->
+                exists (v : featureVec fs), witness cs = Some v.
+    Admitted.
+
+    Corollary constraintSpaceWitnessEmpty :
+        forall {n : nat} (fs : featureSig n) (cs : featureSpaceConstraint fs),
+            empty cs = true <-> witness cs = None.
+    Admitted.
+
+    Theorem constraintSpaceEmptySplit :
+        forall {n : nat} (fs : featureSig n) (i : fin n) (t : testIndex (getFeature fs i)) (cs : featureSpaceConstraint fs),
+            empty cs = (empty (splitLeft i t cs) && empty (splitRight i t cs))%bool.
+    Admitted.
+
+    Theorem constraintSpaceWitnessLeftSplit :
+        forall {n : nat} (fs : featureSig n) (i : fin n) (t : testIndex (getFeature fs i)) (cs : featureSpaceConstraint fs) (v : featureVec fs),
+            witness (splitLeft i t cs) = Some v ->
+                featureTest' v i t = true.
+    Admitted.
+
+    Theorem constraintSpaceWitnessRightSplit :
+        forall {n : nat} (fs : featureSig n) (i : fin n) (t : testIndex (getFeature fs i)) (cs : featureSpaceConstraint fs) (v : featureVec fs),
+            witness (splitRight i t cs) = Some v ->
+                featureTest' v i t = false.
+    Admitted.
+
+    Theorem constraintSpaceInitNotEmpty :
+        forall {n : nat} (fs : featureSig n) (X : fin n -> bool) (vs : featureVec fs),
+            empty (init X vs) = false.
+    Admitted.
+
+    Theorem constraintSpaceInitWitness :
+        forall {n : nat} (fs : featureSig n) (X : fin n -> bool) (vs vs' : featureVec fs) (i : fin n),
+            witness (init X vs) = Some vs' -> X i = false -> getValue' vs' i = getValue' vs i.
+    Admitted.
+
+
 End FeatureSpaceConstraint.
 
 
