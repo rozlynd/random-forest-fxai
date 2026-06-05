@@ -299,6 +299,65 @@ Section FeatureSpaceConstraint.
         end.
 
 
+    Theorem constraintWitnessNotEmpty :
+        forall (f : feature) (get : getFeatureKind f) (c : fConstraint f get),
+            constraintEmpty get c = false <->
+                exists (x : dom f), constraintWitness get c = Some x.
+    Admitted.
+
+    Corollary constraintWitnessEmpty :
+        forall (f : feature) (get : getFeatureKind f) (c : fConstraint f get),
+            constraintEmpty get c = true <-> constraintWitness get c = None.
+    Proof.
+        intros f get c; split; intros H;
+        destruct (constraintEmpty get c) eqn:E1;
+        destruct (constraintWitness get c) eqn:E2;
+        try reflexivity; try discriminate.
+        -   cut (constraintEmpty get c = false);
+                try (intro abs; now rewrite abs in E1);
+            apply constraintWitnessNotEmpty; now exists d.
+        -   apply constraintWitnessNotEmpty in E1 as (x & E1);
+            now rewrite E1 in E2.
+    Qed.
+
+    Theorem constraintEmptySplit :
+        forall (f : feature) (get : getFeatureKind f) (t : testIndex f) (c : fConstraint f get),
+            constraintEmpty get c =
+                (constraintEmpty get (constraintLeftSplit get t c)
+                && constraintEmpty get (constraintRightSplit get t c))%bool.
+    Admitted.
+
+    Theorem constraintWitnessLeftSplit :
+        forall (f : feature) (get : getFeatureKind f) (t : testIndex f) (c : fConstraint f get) (x : dom f),
+            constraintWitness get (constraintLeftSplit get t c) = Some x ->
+                tests f t x = true.
+    Admitted.
+
+    Theorem constraintWitnessRightSplit :
+        forall (f : feature) (get : getFeatureKind f) (t : testIndex f) (c : fConstraint f get) (x : dom f),
+            constraintWitness get (constraintRightSplit get t c) = Some x ->
+                tests f t x = false.
+    Admitted.
+
+    Theorem constraintInitFullNotEmpty :
+        forall (f : feature) (get : getFeatureKind f),
+            constraintEmpty get (constraintInitFull get) = false.
+    Admitted.
+
+    Theorem constraintWitnessSingleton :
+        forall (f : feature) (get : getFeatureKind f) (x : dom f),
+            constraintWitness get (constraintInitSingleton get x) = Some x.
+    Admitted.
+
+    Corollary constraintInitSingletonNotEmpty :
+        forall (f : feature) (get : getFeatureKind f) (x : dom f),
+            constraintEmpty get (constraintInitSingleton get x) = false.
+    Proof.
+        intros f get x; apply constraintWitnessNotEmpty;
+        rewrite constraintWitnessSingleton; now eexists.
+    Qed.
+
+
     Inductive featureSpaceConstraint : forall {n : nat}, featureSig n -> Type :=
     | featureSpaceConstraintNil : featureSpaceConstraint featureSigNil
     | featureSpaceConstraintCons
