@@ -516,8 +516,6 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Definition init : S.t -> featureVec C.fs -> featureSpaceConstraint C.fs :=
         fun X => init (fun i => S.mem i X).
 
-    (* Search for a v' that gives a different prediction than v on the decision tree
-       and such that v' agrees with v on the complement of X. *)
     Definition refute (dt : C.t) (v : featureVec C.fs) (X : S.t) : option (featureVec C.fs) :=
         refute_aux v (C.eval dt v) (init X v) dt.
 
