@@ -5,7 +5,9 @@ Require Import Orders MSets Floats PrimFloat.
 Definition float_std := { x : float | is_nan x = false }.
 
 Module FloatTTLB : TotalTransitiveLeBool
-    with Definition t := float_std.
+    with Definition t := float_std
+    with Definition leb := fun (x y : float_std) =>
+        PrimFloat.leb (proj1_sig x) (proj1_sig y).
 
     Import Floats.FloatOps.
 
