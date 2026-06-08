@@ -249,6 +249,91 @@ Section FeatureSpaceConstraint.
         rewrite boolConstraintWitnessSingleton; now eexists.
     Qed.
 
+    Theorem floatConstraintWitnessNotEmpty :
+        forall (c : floatConstraint),
+            floatConstraintEmpty c = false <->
+                exists (x : float_std), floatConstraintWitness c = Some x.
+    Proof.
+        intros c; destruct c; split; simpl; intros H;
+            try reflexivity;
+            try discriminate;
+            try (now eexists);
+            try (destruct H as (x & H); discriminate);
+        destruct a as (x, q); destruct b as (y, r); simpl in *;
+        destruct (is_infinity x); destruct (is_infinity y);
+            try (now eexists).
+    Qed.
+
+    Theorem floatConstraintEmptySplit :
+        forall (t : float_test) (c : floatConstraint),
+            floatConstraintEmpty c =
+                (floatConstraintEmpty (floatConstraintLeftSplit t c)
+                && floatConstraintEmpty (floatConstraintRightSplit t c))%bool.
+    Proof.
+        intros t c; destruct t as (y);
+        destruct c as [| a | a b s ]; simpl;
+        destruct (is_infinity (proj1_sig y)); destruct (get_sign (proj1_sig y)); simpl;
+            try reflexivity;
+            try (destruct (proj1_sig a <? proj1_sig y)%float; reflexivity);
+        destruct (proj1_sig a <? proj1_sig y)%float eqn:H1;
+        destruct (proj1_sig b <? proj1_sig y)%float eqn:H2;
+        simpl; try reflexivity; simpl in s;
+        cut ((proj1_sig a <? proj1_sig y = true)%float);
+            try (intros abs; rewrite abs in H1; discriminate).
+        (* a < b -> b < y -> a < y *)
+    Admitted.
+
+    Theorem floatConstraintWitnessLeftSplit :
+        forall (t : float_test) (c : floatConstraint) (x : float_std),
+            floatConstraintWitness (floatConstraintLeftSplit t c) = Some x ->
+                tests float_feature t x = true.
+    Proof.
+        intros (y) c x H; destruct c; simpl in H;
+        destruct (is_infinity (proj1_sig y)) eqn:Hinf;
+        destruct (get_sign (proj1_sig y)) eqn:Hsign;
+            try (now inversion H);
+            try (
+                destruct (proj1_sig a <? proj1_sig y)%float eqn:Hlt;
+                inversion H; simpl; subst x; destruct a; destruct y; apply Hlt).
+        -   admit. (* x < +inf *)
+        -   admit. (* idem *)
+        -   destruct (proj1_sig a <? proj1_sig y)%float eqn:Hlt1;
+            destruct (proj1_sig b <? proj1_sig y)%float eqn:Hlt2; simpl in H;
+            destruct (is_infinity (proj1_sig a)) eqn:Hinf1;
+            destruct (is_infinity (proj1_sig b)) eqn:Hinf2;
+                try (inversion H; simpl; subst x; destruct a; destruct y; apply Hlt1).
+            +   admit. (* ~ +inf < y (finite) *)
+            +   admit. (* ~ +inf < y (finite) *)
+            +   rewrite Hinf in H; inversion H; destruct y; simpl.
+                admit. (* next_down z < z *)
+            +   rewrite Hinf in H; inversion H; destruct y; simpl.
+                admit. (* idem *)
+        -   admit. (* idem *)
+    Admitted.
+
+    Theorem floatConstraintWitnessRightSplit :
+        forall (t : float_test) (c : floatConstraint) (x : float_std),
+            floatConstraintWitness (floatConstraintRightSplit t c) = Some x ->
+                tests float_feature t x = false.
+    Admitted.
+
+    Theorem floatConstraintInitFullNotEmpty :
+        floatConstraintEmpty floatConstraintInitFull = false.
+    Proof. reflexivity. Qed.
+
+    Theorem floatConstraintWitnessSingleton :
+        forall (x : float_std),
+            floatConstraintWitness (floatConstraintInitSingleton x) = Some x.
+    Proof. intros x; destruct x; reflexivity. Qed.
+
+    Corollary floatConstraintInitSingletonNotEmpty :
+        forall (x : float_std),
+            floatConstraintEmpty (floatConstraintInitSingleton x) = false.
+    Proof.
+        intros x; apply floatConstraintWitnessNotEmpty;
+        rewrite floatConstraintWitnessSingleton; now eexists.
+    Qed.
+
 
     (* Definitions of witness, left/right split and init on the sum-type of constraints *)
 
