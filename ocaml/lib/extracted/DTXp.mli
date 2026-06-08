@@ -139,8 +139,7 @@ module DtWCXpCheckerImpl :
    sig
    end
 
-  val refute_aux :
-    featureVec -> C.K.t -> featureSpaceConstraint -> C.t -> featureVec option
+  val refute_aux : C.K.t -> featureSpaceConstraint -> C.t -> featureVec option
 
   val init : S.t -> featureVec -> featureSpaceConstraint
 

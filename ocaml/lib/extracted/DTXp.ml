@@ -359,22 +359,19 @@ module DtWCXpCheckerImpl =
   module FD = FeatureSigDefs(C)(S)
 
   (** val refute_aux :
-      featureVec -> C.K.t -> featureSpaceConstraint -> C.t -> featureVec
-      option **)
+      C.K.t -> featureSpaceConstraint -> C.t -> featureVec option **)
 
-  let rec refute_aux v0 c0 c = function
+  let rec refute_aux c0 c = function
   | DT.Leaf c1 -> if C.K.eq_dec c1 c0 then None else witness C.n C.fs c
   | DT.Node (i, test, dt1, dt2) ->
     let cleft = splitLeft C.n C.fs i test c in
     let cRight = splitRight C.n C.fs i test c in
     if empty C.n C.fs cleft
-    then if empty C.n C.fs cRight then None else refute_aux v0 c0 cRight dt2
-    else (match refute_aux v0 c0 cleft dt1 with
+    then if empty C.n C.fs cRight then None else refute_aux c0 cRight dt2
+    else (match refute_aux c0 cleft dt1 with
           | Some r -> Some r
           | None ->
-            if empty C.n C.fs cRight
-            then None
-            else refute_aux v0 c0 cRight dt2)
+            if empty C.n C.fs cRight then None else refute_aux c0 cRight dt2)
 
   (** val init : S.t -> featureVec -> featureSpaceConstraint **)
 
@@ -384,7 +381,7 @@ module DtWCXpCheckerImpl =
   (** val refute : C.t -> featureVec -> S.t -> featureVec option **)
 
   let refute dt0 v0 x =
-    refute_aux v0 (C.eval dt0 v0) (init x v0) dt0
+    refute_aux (C.eval dt0 v0) (init x v0) dt0
  end
 
 module DtWCXpChecker =

@@ -625,7 +625,6 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Module Import FD := FeatureSigDefs C S.
 
     Fixpoint refute_aux
-            (v : featureVec C.fs)
             (c0 : C.K.t)
             (C : featureSpaceConstraint C.fs)
             (dt : C.t)
@@ -643,15 +642,15 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
                 if empty CRight then
                     None
                 else
-                    refute_aux v c0 CRight dt2
+                    refute_aux c0 CRight dt2
             else
-                match refute_aux v c0 Cleft dt1 with
+                match refute_aux c0 Cleft dt1 with
                 | Some r => Some r
                 | None =>
                     if empty CRight then
                         None
                     else
-                        refute_aux v c0 CRight dt2
+                        refute_aux c0 CRight dt2
                 end
         end.
 
@@ -659,7 +658,7 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
         fun X => init (fun i => S.mem i X).
 
     Definition refute (dt : C.t) (v : featureVec C.fs) (X : S.t) : option (featureVec C.fs) :=
-        refute_aux v (C.eval dt v) (init X v) dt.
+        refute_aux (C.eval dt v) (init X v) dt.
 
     Theorem refute_success_agrees :
         forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
