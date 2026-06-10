@@ -51,6 +51,29 @@ Section FeatureSpaceConstraint.
         end.
 
 
+    (* Constraint as predicate *)
+
+    Definition boolConstraintSat (c : boolConstraint) (b : bool) : bool :=
+        match c with
+        | BEmpty => false
+        | BTrue => b
+        | BFalse => negb b
+        | BAny => true
+        end.
+
+    Definition floatConstraintSat (c : floatConstraint) (x : float_std) : bool :=
+        match c with
+        | FEmpty => false
+        | FSingleton a => (proj1_sig a =? proj1_sig x)%float
+        | FRange a b _ => (proj1_sig a <=? proj1_sig x)%float && (proj1_sig x <? proj1_sig b)%float
+        end.
+
+    Definition senumConstraintSat {s : StringSet.t} (c : senumConstraint s) (x : string_enum s) : bool :=
+        match c with
+        | SEnum _ p _ => StringSet.mem (proj1_sig x) p
+        end.
+
+
     (* Get a witness satisfying some constraint if one exists *)
 
     Definition boolConstraintWitness (c : boolConstraint) : option bool :=
@@ -207,6 +230,11 @@ Section FeatureSpaceConstraint.
         destruct H as (x & H); discriminate.
     Qed.
 
+    Theorem boolConstraintWitnessSat :
+        forall (c : boolConstraint) (x : bool),
+            boolConstraintWitness c = Some x -> boolConstraintSat c x = true.
+    Proof. intros c x H; destruct c; destruct x; now inversion H. Qed.
+
     Theorem boolConstraintEmptySplit :
         forall (t : boolean_test) (c : boolConstraint),
             boolConstraintEmpty c =
@@ -263,6 +291,25 @@ Section FeatureSpaceConstraint.
         destruct (is_infinity x); destruct (is_infinity y);
             try (now eexists).
     Qed.
+
+    Theorem floatConstraintWitnessSat :
+        forall (c : floatConstraint) (x : float_std),
+            floatConstraintWitness c = Some x -> floatConstraintSat c x = true.
+    Proof.
+        intros c x H; destruct c; inversion H; simpl.
+        -   admit. (* reflexivity *)
+        -   destruct (is_infinity (proj1_sig a)) eqn:Hinf1;
+            destruct (is_infinity (proj1_sig b)) eqn:Hinf2;
+            apply andb_true_intro; split.
+            +   admit.  (* ~ +inf < b /\ -inf <= x *)
+            +   admit.  (* ~ a < -inf /\ x < +inf *)
+            +   admit.  (* idem *)
+            +   admit.  (* next_down b < b *)
+            +   admit.  (* x <= x *)
+            +   inversion H1; subst x; exact p.
+            +   admit.  (* x <= x *)
+            +   inversion H1; subst x; exact p.
+    Admitted.
 
     Theorem floatConstraintEmptySplit :
         forall (t : float_test) (c : floatConstraint),
