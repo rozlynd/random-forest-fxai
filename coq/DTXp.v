@@ -53,24 +53,24 @@ Section FeatureSpaceConstraint.
 
     (* Constraint as predicate *)
 
-    Definition boolConstraintSat (c : boolConstraint) (b : bool) : bool :=
+    Definition boolConstraintSat (c : boolConstraint) (b : bool) : Prop :=
         match c with
-        | BEmpty => false
-        | BTrue => b
-        | BFalse => negb b
-        | BAny => true
+        | BEmpty => False
+        | BTrue => b = true
+        | BFalse => b = false
+        | BAny => True
         end.
 
-    Definition floatConstraintSat (c : floatConstraint) (x : float_std) : bool :=
+    Definition floatConstraintSat (c : floatConstraint) (x : float_std) : Prop :=
         match c with
-        | FEmpty => false
-        | FSingleton a => (proj1_sig a =? proj1_sig x)%float
-        | FRange a b _ => (proj1_sig a <=? proj1_sig x)%float && (proj1_sig x <? proj1_sig b)%float
+        | FEmpty => False
+        | FSingleton a => (proj1_sig a =? proj1_sig x = true)%float
+        | FRange a b _ => (proj1_sig a <=? proj1_sig x = true)%float /\ (proj1_sig x <? proj1_sig b = true)%float
         end.
 
-    Definition senumConstraintSat {s : StringSet.t} (c : senumConstraint s) (x : string_enum s) : bool :=
+    Definition senumConstraintSat {s : StringSet.t} (c : senumConstraint s) (x : string_enum s) : Prop :=
         match c with
-        | SEnum _ p _ => StringSet.mem (proj1_sig x) p
+        | SEnum _ p _ => StringSet.In (proj1_sig x) p
         end.
 
 
@@ -218,46 +218,131 @@ Section FeatureSpaceConstraint.
 
     (* Facts about individual constraints *)
 
-    Theorem boolConstraintWitnessNotEmpty :
-        forall (c : boolConstraint),
-            boolConstraintEmpty c = false <->
-                exists (x : bool), boolConstraintWitness c = Some x.
-    Proof.
-        intros c; destruct c; split; simpl; intros H;
-            try reflexivity;
-            try discriminate;
-            try (now eexists);
-        destruct H as (x & H); discriminate.
-    Qed.
-
-    Theorem boolConstraintWitnessSat :
+    Theorem boolConstraintSatNotEmpty :
         forall (c : boolConstraint) (x : bool),
-            boolConstraintWitness c = Some x -> boolConstraintSat c x = true.
+            boolConstraintSat c x -> boolConstraintEmpty c = false.
     Proof. intros c x H; destruct c; destruct x; now inversion H. Qed.
 
-    Theorem boolConstraintEmptySplit :
-        forall (t : boolean_test) (c : boolConstraint),
-            boolConstraintEmpty c =
-                (boolConstraintEmpty (boolConstraintLeftSplit t c)
-                && boolConstraintEmpty (boolConstraintRightSplit t c))%bool.
-    Proof. intros t c; destruct c; reflexivity. Qed.
+    Corollary boolConstraintEmptyUnsat :
+        forall (c : boolConstraint) (x : bool),
+            boolConstraintEmpty c = true -> ~ boolConstraintSat c x.
+    Proof.
+        intros c x H abs; now rewrite boolConstraintSatNotEmpty with (x := x) in H.
+    Qed.
 
-    Theorem boolConstraintWitnessLeftSplit :
-        forall (t : boolean_test) (c : boolConstraint) (x : bool),
+    Theorem boolConstraintWitnessSomeSat :
+        forall (c : boolConstraint) (x : bool),
+            boolConstraintWitness c = Some x -> boolConstraintSat c x.
+    Proof. intros c x H; destruct c; destruct x; now inversion H. Qed.
+
+    Corollary boolConstraintEmptyWitnessNone :
+        forall (c : boolConstraint),
+            boolConstraintEmpty c = true -> boolConstraintWitness c = None.
+    Proof.
+        intros c H; destruct (boolConstraintWitness c) as [x |] eqn:Hw; try reflexivity;
+        exfalso; now apply boolConstraintEmptyUnsat with c x, boolConstraintWitnessSomeSat.
+    Qed.
+
+    Corollary boolConstraintWitnessSomeNonEmpty :
+        forall (c : boolConstraint) (x : bool),
+            boolConstraintWitness c = Some x -> boolConstraintEmpty c = false.
+    Proof.
+        intros c x H; now apply boolConstraintSatNotEmpty with (x := x), boolConstraintWitnessSomeSat.
+    Qed.
+
+    Theorem boolConstraintWitnessNoneEmpty :
+        forall (c : boolConstraint),
+            boolConstraintWitness c = None -> boolConstraintEmpty c = true.
+    Proof. intros c H; destruct c; now inversion H. Qed.
+
+    Corollary boolConstraintNonEmptyWitnessSome :
+        forall (c : boolConstraint),
+            boolConstraintEmpty c = false -> exists (x : bool), boolConstraintWitness c = Some x.
+    Proof.
+        intros c H; destruct (boolConstraintWitness) as [x |] eqn:Hw; try (now exists x);
+        now rewrite boolConstraintWitnessNoneEmpty in H.
+    Qed.
+
+    Corollary boolConstraintNonEmptySat :
+        forall (c : boolConstraint),
+            boolConstraintEmpty c = false -> exists (x : bool), boolConstraintSat c x.
+    Proof.
+        intros c H; destruct boolConstraintNonEmptyWitnessSome with c as (x & H'); try assumption;
+        exists x; now apply boolConstraintWitnessSomeSat.
+    Qed.
+
+    Theorem boolConstraintSatSplitLeft :
+        forall (c : boolConstraint) (t : boolean_test) (x : bool),
+            boolConstraintSat (boolConstraintLeftSplit t c) x <->
+                boolConstraintSat c x /\ tests boolean_feature t x = true.
+    Proof.
+        intros c t x; split;
+        [ intros H; destruct c; destruct t; destruct x; now inversion H
+        | intros (H1 & H2); destruct c; destruct t; destruct x; now inversion H1 ].
+    Qed.
+
+    Corollary boolConstraintWitnessSplitLeft :
+        forall (c : boolConstraint) (t : boolean_test) (x : bool),
             boolConstraintWitness (boolConstraintLeftSplit t c) = Some x ->
                 tests boolean_feature t x = true.
     Proof.
-        intros t c x H; destruct c; destruct t; simpl in H;
-        inversion H; reflexivity.
+        intros c t x H; now apply boolConstraintWitnessSomeSat, boolConstraintSatSplitLeft in H.
     Qed.
 
-    Theorem boolConstraintWitnessRightSplit :
-        forall (t : boolean_test) (c : boolConstraint) (x : bool),
+    Theorem boolConstraintSatSplitRight :
+        forall (c : boolConstraint) (t : boolean_test) (x : bool),
+            boolConstraintSat (boolConstraintRightSplit t c) x <->
+                boolConstraintSat c x /\ tests boolean_feature t x = false.
+    Proof.
+        intros c t x; split;
+        [ intros H; destruct c; destruct t; destruct x; now inversion H
+        | intros (H1 & H2); destruct c; destruct t; destruct x; now inversion H1 ].
+    Qed.
+
+    Corollary boolConstraintWitnessSplitRight :
+        forall (c : boolConstraint) (t : boolean_test) (x : bool),
             boolConstraintWitness (boolConstraintRightSplit t c) = Some x ->
                 tests boolean_feature t x = false.
     Proof.
-        intros t c x H; destruct c; destruct t; simpl in H;
-        inversion H; reflexivity.
+        intros c t x H; now apply boolConstraintWitnessSomeSat, boolConstraintSatSplitRight in H.
+    Qed.
+
+    Corollary boolConstraintSplitSat :
+        forall (c : boolConstraint) (t : boolean_test) (x : bool),
+            boolConstraintSat c x <->
+                boolConstraintSat (boolConstraintLeftSplit t c) x \/
+                boolConstraintSat (boolConstraintRightSplit t c) x.
+    Proof.
+        intros c t x; rewrite boolConstraintSatSplitLeft, boolConstraintSatSplitRight;
+        split; intros H;
+        [ now destruct (tests boolean_feature t x) eqn:Ht; [left | right]
+        | now destruct H ].
+    Qed.
+
+    Corollary boolConstraintEmptySplit :
+        forall (c : boolConstraint) (t : boolean_test),
+            boolConstraintEmpty c =
+                (boolConstraintEmpty (boolConstraintLeftSplit t c)
+                && boolConstraintEmpty (boolConstraintRightSplit t c))%bool.
+    Proof.
+        intros c t;
+        destruct (boolConstraintEmpty c) eqn:H;
+        destruct (boolConstraintEmpty (boolConstraintLeftSplit t c)) eqn:Hl;
+        destruct (boolConstraintEmpty (boolConstraintRightSplit t c)) eqn:Hr;
+            try reflexivity; exfalso;
+            try (
+                apply boolConstraintNonEmptySat in Hr as (x & Hr);
+                apply boolConstraintSatSplitRight in Hr as (Hr & _);
+                apply boolConstraintSatNotEmpty in Hr; now rewrite Hr in H);
+            try (
+                apply boolConstraintNonEmptySat in Hl as (x & Hl);
+                apply boolConstraintSatSplitLeft in Hl as (Hl & _);
+                apply boolConstraintSatNotEmpty in Hl; now rewrite Hl in H);
+        apply boolConstraintNonEmptySat in H as (x & H);
+        destruct (tests boolean_feature t x) eqn:Ht;
+        eapply boolConstraintEmptyUnsat; [apply Hl | idtac | apply Hr | idtac];
+            try (now apply boolConstraintSatSplitLeft with (x := x));
+            try (now apply boolConstraintSatSplitRight with (x := x)).
     Qed.
 
     Theorem boolConstraintInitFullNotEmpty :
@@ -269,117 +354,25 @@ Section FeatureSpaceConstraint.
             boolConstraintWitness (boolConstraintInitSingleton x) = Some x.
     Proof. intros x; destruct x; reflexivity. Qed.
 
+    Corollary boolConstraintSatSingleton :
+        forall (x : bool),
+            boolConstraintSat (boolConstraintInitSingleton x) x.
+    Proof. intros x; apply boolConstraintWitnessSomeSat, boolConstraintWitnessSingleton. Qed.
+
     Corollary boolConstraintInitSingletonNotEmpty :
         forall (x : bool),
             boolConstraintEmpty (boolConstraintInitSingleton x) = false.
-    Proof.
-        intros x; apply boolConstraintWitnessNotEmpty;
-        rewrite boolConstraintWitnessSingleton; now eexists.
-    Qed.
+    Proof. intros x; eapply boolConstraintSatNotEmpty, boolConstraintSatSingleton. Qed.
 
-    Theorem floatConstraintWitnessNotEmpty :
-        forall (c : floatConstraint),
-            floatConstraintEmpty c = false <->
-                exists (x : float_std), floatConstraintWitness c = Some x.
-    Proof.
-        intros c; destruct c; split; simpl; intros H;
-            try reflexivity;
-            try discriminate;
-            try (now eexists);
-            try (destruct H as (x & H); discriminate);
-        destruct a as (x, q); destruct b as (y, r); simpl in *;
-        destruct (is_infinity x); destruct (is_infinity y);
-            try (now eexists).
-    Qed.
+    Theorem boolConstraintSatSingletonUnique :
+        forall (x y : bool),
+            boolConstraintSat (boolConstraintInitSingleton x) y -> x = y.
+    Proof. intros x y H; destruct x; destruct y; now inversion H. Qed.
 
-    Theorem floatConstraintWitnessSat :
-        forall (c : floatConstraint) (x : float_std),
-            floatConstraintWitness c = Some x -> floatConstraintSat c x = true.
-    Proof.
-        intros c x H; destruct c; inversion H; simpl.
-        -   admit. (* reflexivity *)
-        -   destruct (is_infinity (proj1_sig a)) eqn:Hinf1;
-            destruct (is_infinity (proj1_sig b)) eqn:Hinf2;
-            apply andb_true_intro; split.
-            +   admit.  (* ~ +inf < b /\ -inf <= x *)
-            +   admit.  (* ~ a < -inf /\ x < +inf *)
-            +   admit.  (* idem *)
-            +   admit.  (* next_down b < b *)
-            +   admit.  (* x <= x *)
-            +   inversion H1; subst x; exact p.
-            +   admit.  (* x <= x *)
-            +   inversion H1; subst x; exact p.
-    Admitted.
-
-    Theorem floatConstraintEmptySplit :
-        forall (t : float_test) (c : floatConstraint),
-            floatConstraintEmpty c =
-                (floatConstraintEmpty (floatConstraintLeftSplit t c)
-                && floatConstraintEmpty (floatConstraintRightSplit t c))%bool.
-    Proof.
-        intros t c; destruct t as (y);
-        destruct c as [| a | a b s ]; simpl;
-        destruct (is_infinity (proj1_sig y)); destruct (get_sign (proj1_sig y)); simpl;
-            try reflexivity;
-            try (destruct (proj1_sig a <? proj1_sig y)%float; reflexivity);
-        destruct (proj1_sig a <? proj1_sig y)%float eqn:H1;
-        destruct (proj1_sig b <? proj1_sig y)%float eqn:H2;
-        simpl; try reflexivity; simpl in s;
-        cut ((proj1_sig a <? proj1_sig y = true)%float);
-            try (intros abs; rewrite abs in H1; discriminate).
-        (* a < b -> b < y -> a < y *)
-    Admitted.
-
-    Theorem floatConstraintWitnessLeftSplit :
-        forall (t : float_test) (c : floatConstraint) (x : float_std),
-            floatConstraintWitness (floatConstraintLeftSplit t c) = Some x ->
-                tests float_feature t x = true.
-    Proof.
-        intros (y) c x H; destruct c; simpl in H;
-        destruct (is_infinity (proj1_sig y)) eqn:Hinf;
-        destruct (get_sign (proj1_sig y)) eqn:Hsign;
-            try (now inversion H);
-            try (
-                destruct (proj1_sig a <? proj1_sig y)%float eqn:Hlt;
-                inversion H; simpl; subst x; destruct a; destruct y; apply Hlt).
-        -   admit. (* x < +inf *)
-        -   admit. (* idem *)
-        -   destruct (proj1_sig a <? proj1_sig y)%float eqn:Hlt1;
-            destruct (proj1_sig b <? proj1_sig y)%float eqn:Hlt2; simpl in H;
-            destruct (is_infinity (proj1_sig a)) eqn:Hinf1;
-            destruct (is_infinity (proj1_sig b)) eqn:Hinf2;
-                try (inversion H; simpl; subst x; destruct a; destruct y; apply Hlt1).
-            +   admit. (* ~ +inf < y (finite) *)
-            +   admit. (* ~ +inf < y (finite) *)
-            +   rewrite Hinf in H; inversion H; destruct y; simpl.
-                admit. (* next_down z < z *)
-            +   rewrite Hinf in H; inversion H; destruct y; simpl.
-                admit. (* idem *)
-        -   admit. (* idem *)
-    Admitted.
-
-    Theorem floatConstraintWitnessRightSplit :
-        forall (t : float_test) (c : floatConstraint) (x : float_std),
-            floatConstraintWitness (floatConstraintRightSplit t c) = Some x ->
-                tests float_feature t x = false.
-    Admitted.
-
-    Theorem floatConstraintInitFullNotEmpty :
-        floatConstraintEmpty floatConstraintInitFull = false.
-    Proof. reflexivity. Qed.
-
-    Theorem floatConstraintWitnessSingleton :
-        forall (x : float_std),
-            floatConstraintWitness (floatConstraintInitSingleton x) = Some x.
-    Proof. intros x; destruct x; reflexivity. Qed.
-
-    Corollary floatConstraintInitSingletonNotEmpty :
-        forall (x : float_std),
-            floatConstraintEmpty (floatConstraintInitSingleton x) = false.
-    Proof.
-        intros x; apply floatConstraintWitnessNotEmpty;
-        rewrite floatConstraintWitnessSingleton; now eexists.
-    Qed.
+    Corollary boolConstraintWitnessSingletonUnique :
+        forall (x y : bool),
+            boolConstraintWitness (boolConstraintInitSingleton x) = Some y -> x = y.
+    Proof. intros x y H; now apply boolConstraintSatSingletonUnique, boolConstraintWitnessSomeSat. Qed.
 
 
     (* Definitions of witness, left/right split and init on the sum-type of constraints *)
@@ -701,8 +694,30 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
                 end
         end.
 
+    Lemma refute_aux_preserves_agrees :
+        forall (v : featureVec C.fs) (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t),
+            True.
+    Admitted.
+
+
     Definition init : S.t -> featureVec C.fs -> featureSpaceConstraint C.fs :=
         fun X => init (fun i => S.mem i X).
+
+    Lemma init_constraintNotEmpty :
+        forall (X : S.t) (v : featureVec C.fs),
+            empty (init X v) = false.
+    Proof. intros; apply constraintSpaceInitNotEmpty. Qed.
+
+    Lemma init_constraintWitness :
+        forall (X : S.t) (v v' : featureVec C.fs),
+            witness (init X v) = Some v' -> FD.equiv (S.compl X) v v'.
+    Proof.
+        intros X v v' H i Hi; symmetry;
+        eapply constraintSpaceInitWitness; [eassumption|];
+        apply Bool.not_true_is_false; intros abs;
+        apply S.In_compl in Hi; now apply Hi, S.mem_spec.
+    Qed.
+
 
     Definition refute (dt : C.t) (v : featureVec C.fs) (X : S.t) : option (featureVec C.fs) :=
         refute_aux (C.eval dt v) (init X v) dt.
