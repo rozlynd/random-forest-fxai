@@ -404,6 +404,28 @@ Section FeatureSpaceConstraint.
         end.
     Admit Obligations.
 
+    Program Definition constraintSat {f : feature} (get : getFeatureKind f) : fConstraint f get -> dom f -> Prop :=
+        match get in getFeatureKind f
+                    return fConstraint f get -> dom f -> Prop
+        with
+        | isBooleanFeature => fun c =>
+            match c with
+            | CBool c => fun x => boolConstraintSat c x
+            | _ => fun _ => False_rect _ _
+            end
+        | isContinuousFeature => fun c =>
+            match c with
+            | CFloat c => fun x => floatConstraintSat c x
+            | _ => fun _ => False_rect _ _
+            end
+        | isStringEnumFeature s => fun c =>
+            match c with
+            | CSEnum c => fun x => senumConstraintSat c x
+            | _ => fun _ => False_rect _ _
+            end
+        end.
+    Admit Obligations.
+
     Program Definition constraintWitness {f : feature} (get : getFeatureKind f) : fConstraint f get -> option (dom f) :=
         match get in getFeatureKind f 
                     return fConstraint f get -> option (dom f)
@@ -481,64 +503,162 @@ Section FeatureSpaceConstraint.
         end.
 
 
-    Theorem constraintWitnessNotEmpty :
-        forall (f : feature) (get : getFeatureKind f) (c : fConstraint f get),
-            constraintEmpty get c = false <->
-                exists (x : dom f), constraintWitness get c = Some x.
-    Admitted.
+    Section fConstraintFacts.
 
-    Corollary constraintWitnessEmpty :
-        forall (f : feature) (get : getFeatureKind f) (c : fConstraint f get),
-            constraintEmpty get c = true <-> constraintWitness get c = None.
-    Proof.
-        intros f get c; split; intros H;
-        destruct (constraintEmpty get c) eqn:E1;
-        destruct (constraintWitness get c) eqn:E2;
-        try reflexivity; try discriminate.
-        -   cut (constraintEmpty get c = false);
-                try (intro abs; now rewrite abs in E1);
-            apply constraintWitnessNotEmpty; now exists d.
-        -   apply constraintWitnessNotEmpty in E1 as (x & E1);
-            now rewrite E1 in E2.
-    Qed.
+        Context {f : feature} (get : getFeatureKind f).
 
-    Theorem constraintEmptySplit :
-        forall (f : feature) (get : getFeatureKind f) (t : testIndex f) (c : fConstraint f get),
-            constraintEmpty get c =
-                (constraintEmpty get (constraintLeftSplit get t c)
-                && constraintEmpty get (constraintRightSplit get t c))%bool.
-    Admitted.
+        Theorem constraintSatNotEmpty :
+            forall (c : fConstraint f get) (x : dom f),
+                constraintSat get c x -> constraintEmpty get c = false.
+        Admitted.
 
-    Theorem constraintWitnessLeftSplit :
-        forall (f : feature) (get : getFeatureKind f) (t : testIndex f) (c : fConstraint f get) (x : dom f),
-            constraintWitness get (constraintLeftSplit get t c) = Some x ->
-                tests f t x = true.
-    Admitted.
+        Corollary constraintEmptyUnsat :
+            forall (c : fConstraint f get) (x : dom f),
+                constraintEmpty get c = true -> ~ constraintSat get c x.
+        Proof.
+            intros c x H abs; now rewrite constraintSatNotEmpty with (x := x) in H.
+        Qed.
 
-    Theorem constraintWitnessRightSplit :
-        forall (f : feature) (get : getFeatureKind f) (t : testIndex f) (c : fConstraint f get) (x : dom f),
-            constraintWitness get (constraintRightSplit get t c) = Some x ->
-                tests f t x = false.
-    Admitted.
+        Theorem constraintWitnessSomeSat :
+            forall (c : fConstraint f get) (x : dom f),
+                constraintWitness get c = Some x -> constraintSat get c x.
+        Admitted.
 
-    Theorem constraintInitFullNotEmpty :
-        forall (f : feature) (get : getFeatureKind f),
+        Corollary constraintEmptyWitnessNone :
+            forall (c : fConstraint f get),
+                constraintEmpty get c = true -> constraintWitness get c = None.
+        Proof.
+            intros c H; destruct (constraintWitness get c) as [x |] eqn:Hw; try reflexivity;
+            exfalso; now apply constraintEmptyUnsat with c x, constraintWitnessSomeSat.
+        Qed.
+
+        Corollary constraintWitnessSomeNonEmpty :
+            forall (c : fConstraint f get) (x : dom f),
+                constraintWitness get c = Some x -> constraintEmpty get c = false.
+        Proof.
+            intros c x H; now apply constraintSatNotEmpty with (x := x), constraintWitnessSomeSat.
+        Qed.
+
+        Theorem constraintWitnessNoneEmpty :
+            forall (c : fConstraint f get),
+                constraintWitness get c = None -> constraintEmpty get c = true.
+        Admitted.
+
+        Corollary constraintNonEmptyWitnessSome :
+            forall (c : fConstraint f get),
+                constraintEmpty get c = false -> exists (x : dom f), constraintWitness get c = Some x.
+        Proof.
+            intros c H; destruct (constraintWitness) as [x |] eqn:Hw; try (now exists x);
+            now rewrite constraintWitnessNoneEmpty in H.
+        Qed.
+
+        Corollary constraintNonEmptySat :
+            forall (c : fConstraint f get),
+                constraintEmpty get c = false -> exists (x : dom f), constraintSat get c x.
+        Proof.
+            intros c H; destruct constraintNonEmptyWitnessSome with c as (x & H'); try assumption;
+            exists x; now apply constraintWitnessSomeSat.
+        Qed.
+
+        Theorem constraintSatSplitLeft :
+            forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
+                constraintSat get (constraintLeftSplit get t c) x <->
+                    constraintSat get c x /\ tests f t x = true.
+        Admitted.
+
+        Corollary constraintWitnessSplitLeft :
+            forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
+                constraintWitness get (constraintLeftSplit get t c) = Some x ->
+                    tests f t x = true.
+        Proof.
+            intros c t x H; now apply constraintWitnessSomeSat, constraintSatSplitLeft in H.
+        Qed.
+
+        Theorem constraintSatSplitRight :
+            forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
+                constraintSat get (constraintRightSplit get t c) x <->
+                    constraintSat get c x /\ tests f t x = false.
+        Admitted.
+
+        Corollary constraintWitnessSplitRight :
+            forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
+                constraintWitness get (constraintRightSplit get t c) = Some x ->
+                    tests f t x = false.
+        Proof.
+            intros c t x H; now apply constraintWitnessSomeSat, constraintSatSplitRight in H.
+        Qed.
+
+        Corollary constraintSplitSat :
+            forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
+                constraintSat get c x <->
+                    constraintSat get (constraintLeftSplit get t c) x \/
+                    constraintSat get (constraintRightSplit get t c) x.
+        Proof.
+            intros c t x; rewrite constraintSatSplitLeft, constraintSatSplitRight;
+            split; intros H;
+            [ now destruct (tests f t x) eqn:Ht; [left | right]
+            | now destruct H ].
+        Qed.
+
+        Corollary constraintEmptySplit :
+            forall (c : fConstraint f get) (t : testIndex f),
+                constraintEmpty get c =
+                    (constraintEmpty get (constraintLeftSplit get t c)
+                    && constraintEmpty get (constraintRightSplit get t c))%bool.
+        Proof.
+            intros c t;
+            destruct (constraintEmpty get c) eqn:H;
+            destruct (constraintEmpty get (constraintLeftSplit get t c)) eqn:Hl;
+            destruct (constraintEmpty get (constraintRightSplit get t c)) eqn:Hr;
+                try reflexivity; exfalso;
+                try (
+                    apply constraintNonEmptySat in Hr as (x & Hr);
+                    apply constraintSatSplitRight in Hr as (Hr & _);
+                    apply constraintSatNotEmpty in Hr; now rewrite Hr in H);
+                try (
+                    apply constraintNonEmptySat in Hl as (x & Hl);
+                    apply constraintSatSplitLeft in Hl as (Hl & _);
+                    apply constraintSatNotEmpty in Hl; now rewrite Hl in H);
+            apply constraintNonEmptySat in H as (x & H);
+            destruct (tests f t x) eqn:Ht;
+            eapply constraintEmptyUnsat; [apply Hl | idtac | apply Hr | idtac];
+                try (now apply constraintSatSplitLeft with (x := x));
+                try (now apply constraintSatSplitRight with (x := x)).
+        Qed.
+
+        Theorem constraintInitFullNotEmpty :
             constraintEmpty get (constraintInitFull get) = false.
-    Admitted.
+        Admitted.
 
-    Theorem constraintWitnessSingleton :
-        forall (f : feature) (get : getFeatureKind f) (x : dom f),
-            constraintWitness get (constraintInitSingleton get x) = Some x.
-    Admitted.
+        Theorem constraintWitnessSingleton :
+            forall (x : dom f),
+                constraintWitness get (constraintInitSingleton get x) = Some x.
+        Admitted.
 
-    Corollary constraintInitSingletonNotEmpty :
-        forall (f : feature) (get : getFeatureKind f) (x : dom f),
-            constraintEmpty get (constraintInitSingleton get x) = false.
-    Proof.
-        intros f get x; apply constraintWitnessNotEmpty;
-        rewrite constraintWitnessSingleton; now eexists.
-    Qed.
+        Corollary constraintSatSingleton :
+            forall (x : dom f),
+                constraintSat get (constraintInitSingleton get x) x.
+        Proof. intros x; apply constraintWitnessSomeSat, constraintWitnessSingleton. Qed.
 
+        Corollary constraintInitSingletonNotEmpty :
+            forall (x : dom f),
+                constraintEmpty get (constraintInitSingleton get x) = false.
+        Proof. intros x; eapply constraintSatNotEmpty, constraintSatSingleton. Qed.
+
+        Theorem constraintSatSingletonUnique :
+            forall (x y : dom f),
+                constraintSat get (constraintInitSingleton get x) y -> x = y.
+        Admitted.
+
+        Corollary constraintWitnessSingletonUnique :
+            forall (x y : dom f),
+                constraintWitness get (constraintInitSingleton get x) = Some y -> x = y.
+        Proof. intros x y H; now apply constraintSatSingletonUnique, constraintWitnessSomeSat. Qed.
+
+    End fConstraintFacts.
+
+
+    (* Vectors of constraints *)
 
     Inductive featureSpaceConstraint : forall {n : nat}, featureSig n -> Type :=
     | featureSpaceConstraintNil : featureSpaceConstraint featureSigNil
