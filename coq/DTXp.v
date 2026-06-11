@@ -698,6 +698,12 @@ Section FeatureSpaceConstraint.
                 end fs cs (update cs)
         end.
 
+    Inductive sat : forall {n : nat} {fs : featureSig n}, featureSpaceConstraint fs -> featureVec fs -> Prop :=
+    | featureSpaceSatNil : sat featureSpaceConstraintNil featureVecNil
+    | featureSpaceSatCons {f : feature} (get : getFeatureKind f) (c : fConstraint f get) (x : dom f)
+                          {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) (vs : featureVec fs) :
+        constraintSat get c x -> sat cs vs -> sat (featureSpaceConstraintCons f get c cs) (featureVecCons get x vs).
+
     Fixpoint empty {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : bool :=
         match cs with
         | featureSpaceConstraintNil => true
@@ -739,44 +745,140 @@ Section FeatureSpaceConstraint.
         end X.
 
 
-    Theorem constraintSpaceWitnessNotEmpty :
-        forall {n : nat} (fs : featureSig n) (cs : featureSpaceConstraint fs),
-            empty cs = false <->
-                exists (v : featureVec fs), witness cs = Some v.
-    Admitted.
+    Section fConstraintSpaceFacts.
 
-    Corollary constraintSpaceWitnessEmpty :
-        forall {n : nat} (fs : featureSig n) (cs : featureSpaceConstraint fs),
-            empty cs = true <-> witness cs = None.
-    Admitted.
+        Context {n : nat} {fs : featureSig n}.
 
-    Theorem constraintSpaceEmptySplit :
-        forall {n : nat} (fs : featureSig n) (i : fin n) (t : testIndex (getFeature fs i)) (cs : featureSpaceConstraint fs),
-            empty cs = (empty (splitLeft i t cs) && empty (splitRight i t cs))%bool.
-    Admitted.
+        Theorem constraintSpaceSatNotEmpty :
+            forall (c : featureSpaceConstraint fs) (x : featureVec fs),
+                sat c x -> empty c = false.
+        Admitted.
 
-    Theorem constraintSpaceWitnessLeftSplit :
-        forall {n : nat} (fs : featureSig n) (i : fin n) (t : testIndex (getFeature fs i)) (cs : featureSpaceConstraint fs) (v : featureVec fs),
-            witness (splitLeft i t cs) = Some v ->
-                featureTest' v i t = true.
-    Admitted.
+        Corollary constraintSpaceEmptyUnsat :
+            forall (c : featureSpaceConstraint fs) (x : featureVec fs),
+                empty c = true -> ~ sat c x.
+        Proof.
+            intros c x H abs; now rewrite constraintSpaceSatNotEmpty with (x := x) in H.
+        Qed.
 
-    Theorem constraintSpaceWitnessRightSplit :
-        forall {n : nat} (fs : featureSig n) (i : fin n) (t : testIndex (getFeature fs i)) (cs : featureSpaceConstraint fs) (v : featureVec fs),
-            witness (splitRight i t cs) = Some v ->
-                featureTest' v i t = false.
-    Admitted.
+        Theorem constraintSpaceWitnessSomeSat :
+            forall (c : featureSpaceConstraint fs) (x : featureVec fs),
+                witness c = Some x -> sat c x.
+        Admitted.
 
-    Theorem constraintSpaceInitNotEmpty :
-        forall {n : nat} (fs : featureSig n) (X : fin n -> bool) (vs : featureVec fs),
-            empty (init X vs) = false.
-    Admitted.
+        Corollary constraintSpaceEmptyWitnessNone :
+            forall (c : featureSpaceConstraint fs),
+                empty c = true -> witness c = None.
+        Proof.
+            intros c H; destruct (witness c) as [x |] eqn:Hw; try reflexivity;
+            exfalso; now apply constraintSpaceEmptyUnsat with c x, constraintSpaceWitnessSomeSat.
+        Qed.
 
-    Theorem constraintSpaceInitWitness :
-        forall {n : nat} (fs : featureSig n) (X : fin n -> bool) (vs vs' : featureVec fs) (i : fin n),
-            witness (init X vs) = Some vs' -> X i = false -> getValue' vs' i = getValue' vs i.
-    Admitted.
+        Corollary constraintSpaceWitnessSomeNonEmpty :
+            forall (c : featureSpaceConstraint fs) (x : featureVec fs),
+                witness c = Some x -> empty c = false.
+        Proof.
+            intros c x H; now apply constraintSpaceSatNotEmpty with (x := x), constraintSpaceWitnessSomeSat.
+        Qed.
 
+        Theorem constraintSpaceWitnessNoneEmpty :
+            forall (c : featureSpaceConstraint fs),
+                witness c = None -> empty c = true.
+        Admitted.
+
+        Corollary constraintSpaceNonEmptyWitnessSome :
+            forall (c : featureSpaceConstraint fs),
+                empty c = false -> exists (x : featureVec fs), witness c = Some x.
+        Proof.
+            intros c H; destruct (witness c) as [x |] eqn:Hw; try (now exists x);
+            now rewrite constraintSpaceWitnessNoneEmpty in H.
+        Qed.
+
+        Corollary constraintSpaceNonEmptySat :
+            forall (c : featureSpaceConstraint fs),
+                empty c = false -> exists (x : featureVec fs), sat c x.
+        Proof.
+            intros c H; destruct constraintSpaceNonEmptyWitnessSome with c as (x & H'); try assumption;
+            exists x; now apply constraintSpaceWitnessSomeSat.
+        Qed.
+
+        Theorem constraintSpaceSatSplitLeft :
+            forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
+                sat (splitLeft i t c) x <->
+                    sat c x /\ tests (getFeature fs i) t (getValue' x i) = true.
+        Admitted.
+
+        Corollary constraintSpaceWitnessSplitLeft :
+            forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
+                witness (splitLeft i t c) = Some x ->
+                    tests (getFeature fs i) t (getValue' x i) = true.
+        Proof.
+            intros c i t x H; now apply constraintSpaceWitnessSomeSat, constraintSpaceSatSplitLeft in H.
+        Qed.
+
+        Theorem constraintSpaceSatSplitRight :
+            forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
+                sat (splitRight i t c) x <->
+                    sat c x /\ tests (getFeature fs i) t (getValue' x i) = false.
+        Admitted.
+
+        Corollary constraintSpaceWitnessSplitRight :
+            forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
+                witness (splitRight i t c) = Some x ->
+                    tests (getFeature fs i) t (getValue' x i) = false.
+        Proof.
+            intros c i t x H; now apply constraintSpaceWitnessSomeSat, constraintSpaceSatSplitRight in H.
+        Qed.
+
+        Corollary constraintSpaceSplitSat :
+            forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
+                sat c x <->
+                    sat (splitLeft i t c) x \/
+                    sat (splitRight i t c) x.
+        Proof.
+            intros c i t x; rewrite constraintSpaceSatSplitLeft, constraintSpaceSatSplitRight;
+            split; intros H;
+            [ now destruct (tests (getFeature fs i) t (getValue' x i)) eqn:Ht; [left | right]
+            | now destruct H ].
+        Qed.
+
+        Corollary constraintSpaceEmptySplit :
+            forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)),
+                empty c =
+                    (empty (splitLeft i t c)
+                    && empty (splitRight i t c))%bool.
+        Proof.
+            intros c i t;
+            destruct (empty c) eqn:H;
+            destruct (empty (splitLeft i t c)) eqn:Hl;
+            destruct (empty (splitRight i t c)) eqn:Hr;
+                try reflexivity; exfalso;
+                try (
+                    apply constraintSpaceNonEmptySat in Hr as (x & Hr);
+                    apply constraintSpaceSatSplitRight in Hr as (Hr & _);
+                    apply constraintSpaceSatNotEmpty in Hr; now rewrite Hr in H);
+                try (
+                    apply constraintSpaceNonEmptySat in Hl as (x & Hl);
+                    apply constraintSpaceSatSplitLeft in Hl as (Hl & _);
+                    apply constraintSpaceSatNotEmpty in Hl; now rewrite Hl in H);
+            apply constraintSpaceNonEmptySat in H as (x & H);
+            destruct (tests (getFeature fs i) t (getValue' x i)) eqn:Ht;
+            eapply constraintSpaceEmptyUnsat; [apply Hl | idtac | apply Hr | idtac];
+                try (now apply constraintSpaceSatSplitLeft with (x := x));
+                try (now apply constraintSpaceSatSplitRight with (x := x)).
+        Qed.
+
+        Theorem constraintSpaceInitNotEmpty :
+            forall (X : fin n -> bool) (vs : featureVec fs),
+                empty (init X vs) = false.
+        Admitted.
+
+        Theorem constraintSpaceInitWitness :
+            forall (X : fin n -> bool) (vs vs' : featureVec fs) (i : fin n),
+                witness (init X vs) = Some vs' -> X i = false -> getValue' vs' i = getValue' vs i.
+        Admitted.
+
+    End fConstraintSpaceFacts.
 
 End FeatureSpaceConstraint.
 
