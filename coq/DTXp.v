@@ -659,9 +659,9 @@ Section FeatureSpaceConstraint.
                 empty (init X vs) = false.
         Admitted.
 
-        Theorem constraintSpaceInitWitness :
+        Theorem constraintSpaceInitSatValuesUnique :
             forall (X : fin n -> bool) (vs vs' : featureVec fs) (i : fin n),
-                witness (init X vs) = Some vs' -> X i = false -> getValue' vs' i = getValue' vs i.
+                sat (init X vs) vs' -> X i = false -> getValue' vs' i = getValue' vs i.
         Admitted.
 
     End fConstraintSpaceFacts.
@@ -716,14 +716,15 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
             empty (init X v) = false.
     Proof. intros; apply constraintSpaceInitNotEmpty. Qed.
 
-    Lemma init_constraintWitness :
+    Lemma init_constraintSatAgrees :
         forall (X : S.t) (v v' : featureVec C.fs),
-            witness (init X v) = Some v' -> FD.equiv (S.compl X) v v'.
+            sat (init X v) v' -> FD.equiv (S.compl X) v v'.
     Proof.
         intros X v v' H i Hi; symmetry;
-        eapply constraintSpaceInitWitness; [eassumption|];
-        apply Bool.not_true_is_false; intros abs;
-        apply S.In_compl in Hi; now apply Hi, S.mem_spec.
+        eapply constraintSpaceInitSatValuesUnique;
+        [ eassumption
+        | apply Bool.not_true_is_false; intros abs;
+          apply S.In_compl in Hi; now apply Hi, S.mem_spec ].
     Qed.
 
 
