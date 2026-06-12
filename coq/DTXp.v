@@ -1,6 +1,6 @@
 From RFXP Require Import Utils Features DT Xp Explainers.
 
-Require Import Floats Equality.
+Require Import Floats Equality Eqdep.
 
 
 Module Type DTExplanationProblem <: ExplanationProblem :=
@@ -457,7 +457,18 @@ Section FeatureSpaceConstraint.
         forall {n : nat} {fs : featureSig n} {f : feature} {get : getFeatureKind f}
                (c1 c2 : fConstraint f get) (cs1 cs2 : featureSpaceConstraint fs),
             featureSpaceConstraintCons c1 cs1 = featureSpaceConstraintCons c2 cs2 -> c1 = c2 /\ cs1 = cs2.
-    Admitted. (* ??? *)
+    Proof.
+        intros n fs f get c1 c2 cs1 cs2 E; inversion E;
+        apply eq_sigT_eq_dep in H0;
+        apply eq_dep_eq in H0;
+        apply eq_sigT_eq_dep in H0;
+        apply eq_dep_eq in H0;
+        apply eq_sigT_eq_dep in H1;
+        apply eq_dep_eq in H1;
+        apply eq_sigT_eq_dep in H1;
+        apply eq_dep_eq in H1;
+        now split.
+    Qed.
 
     (* HERE BE DRAGONS *)
     Local Fixpoint update {n : nat} {fs : featureSig n}
