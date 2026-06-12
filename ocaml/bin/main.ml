@@ -16,6 +16,6 @@ let string_of_int_list l =
   | x :: l -> aux ("[ " ^ string_of_int x) l
 
 let () =
-  let axp = Find.findAXp Input.S.all in
+  let axp = AXpFind.findAXp Input.S.all in
   let out = string_of_int_list (as_list axp) in
   print_endline out

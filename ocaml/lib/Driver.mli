@@ -8,4 +8,5 @@ open DTXp
 
 module Input : DTInputProblem
 
-module Find : AXpFinder with module E = Input
+module AXpFind : AXpFinder with module E = Input
+module CXpFind : CXpFinder with module E = Input

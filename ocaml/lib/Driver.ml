@@ -82,4 +82,5 @@ module Input : DTInputProblem = struct
 
 end
 
-module Find = DtAXpFinder (Input)
+module AXpFind = DtAXpFinder (Input)
+module CXpFind = DtCXpFinder (Input)
