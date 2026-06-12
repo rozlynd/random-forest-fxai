@@ -307,9 +307,9 @@ let rec update _ _ cs i =
 (** val empty : int -> featureSig -> featureSpaceConstraint -> bool **)
 
 let rec empty _ _ = function
-| Coq_featureSpaceConstraintNil -> true
+| Coq_featureSpaceConstraintNil -> false
 | Coq_featureSpaceConstraintCons (f, get, c, n0, fs0, cs0) ->
-  (&&) (constraintEmpty f get c) (empty n0 fs0 cs0)
+  (||) (constraintEmpty f get c) (empty n0 fs0 cs0)
 
 (** val witness :
     int -> featureSig -> featureSpaceConstraint -> featureVec option **)

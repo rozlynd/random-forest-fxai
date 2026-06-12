@@ -492,9 +492,9 @@ Section FeatureSpaceConstraint.
 
     Fixpoint empty {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : bool :=
         match cs with
-        | featureSpaceConstraintNil => true
-        | featureSpaceConstraintCons f get c cs =>
-            constraintEmpty get c && empty cs
+        | featureSpaceConstraintNil => false
+        | featureSpaceConstraintCons c cs =>
+            constraintEmpty c || empty cs
         end.
 
     Fixpoint witness {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : option (featureVec fs) :=
