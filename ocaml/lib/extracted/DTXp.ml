@@ -298,7 +298,9 @@ let rec update _ _ cs i =
     (fun ap ->
     match i with
     | F1 n1 ->
-      Coq_featureSpaceConstraintCons (f, get, (ap get c), n1, fs0, cs0)
+      Coq_featureSpaceConstraintCons
+        ((getFeature (Stdlib.Int.succ n1) (Coq_featureSigCons (n1, f, get,
+           fs0)) (F1 n1)), get, (ap get c), n1, fs0, cs0)
     | FS (n1, i0) ->
       Coq_featureSpaceConstraintCons (f, get, c, n1, fs0, (x i0 ap)))
 

@@ -275,7 +275,7 @@ Section FeatureSpaceConstraint.
     | CFloat : floatConstraint -> fConstraint float_feature isContinuousFeature
     | CSEnum {s : StringSet.t} : senumConstraint s -> fConstraint (string_enum_feature s) (isStringEnumFeature s).
 
-    Program Definition constraintEmpty {f : feature} (get : getFeatureKind f) : fConstraint f get -> bool :=
+    Program Definition constraintEmpty {f : feature} {get : getFeatureKind f} : fConstraint f get -> bool :=
         match get in getFeatureKind f
                     return fConstraint f get -> bool
         with
@@ -297,7 +297,7 @@ Section FeatureSpaceConstraint.
         end.
     Admit Obligations.
 
-    Program Definition constraintSat {f : feature} (get : getFeatureKind f) : fConstraint f get -> dom f -> Prop :=
+    Program Definition constraintSat {f : feature} {get : getFeatureKind f} : fConstraint f get -> dom f -> Prop :=
         match get in getFeatureKind f
                     return fConstraint f get -> dom f -> Prop
         with
@@ -319,7 +319,7 @@ Section FeatureSpaceConstraint.
         end.
     Admit Obligations.
 
-    Program Definition constraintWitness {f : feature} (get : getFeatureKind f) : fConstraint f get -> option (dom f) :=
+    Program Definition constraintWitness {f : feature} {get : getFeatureKind f} : fConstraint f get -> option (dom f) :=
         match get in getFeatureKind f 
                     return fConstraint f get -> option (dom f)
         with
@@ -341,7 +341,7 @@ Section FeatureSpaceConstraint.
         end.
     Admit Obligations.
 
-    Program Definition constraintLeftSplit {f : feature} (get : getFeatureKind f) : testIndex f -> fConstraint f get -> fConstraint f get :=
+    Program Definition constraintLeftSplit {f : feature} {get : getFeatureKind f} : testIndex f -> fConstraint f get -> fConstraint f get :=
         match get with
         | isBooleanFeature => fun t c =>
             match c with
@@ -361,7 +361,7 @@ Section FeatureSpaceConstraint.
         end.
     Admit Obligations.
 
-    Program Definition constraintRightSplit {f : feature} (get : getFeatureKind f) : testIndex f -> fConstraint f get -> fConstraint f get :=
+    Program Definition constraintRightSplit {f : feature} {get : getFeatureKind f} : testIndex f -> fConstraint f get -> fConstraint f get :=
         match get with
         | isBooleanFeature => fun t c =>
             match c with
@@ -381,14 +381,14 @@ Section FeatureSpaceConstraint.
         end.
     Admit Obligations.
 
-    Definition constraintInitFull {f : feature} (get : getFeatureKind f) : fConstraint f get :=
+    Definition constraintInitFull {f : feature} {get : getFeatureKind f} : fConstraint f get :=
         match get with
         | isBooleanFeature => CBool boolConstraintInitFull
         | isContinuousFeature => CFloat floatConstraintInitFull
         | isStringEnumFeature s => CSEnum (senumConstraintInitFull s)
         end.
 
-    Definition constraintInitSingleton {f : feature} (get : getFeatureKind f) : dom f -> fConstraint f get :=
+    Definition constraintInitSingleton {f : feature} {get : getFeatureKind f} : dom f -> fConstraint f get :=
         match get with
         | isBooleanFeature => fun x => CBool (boolConstraintInitSingleton x)
         | isContinuousFeature => fun x => CFloat (floatConstraintInitSingleton x)
@@ -398,47 +398,47 @@ Section FeatureSpaceConstraint.
 
     Section fConstraintFacts.
 
-        Context {f : feature} (get : getFeatureKind f).
+        Context {f : feature} {get : getFeatureKind f}.
 
         Theorem constraintSatNotEmpty :
             forall (c : fConstraint f get) (x : dom f),
-                constraintSat get c x -> constraintEmpty get c = false.
+                constraintSat c x -> constraintEmpty c = false.
         Admitted.
 
         Theorem constraintWitnessSomeSat :
             forall (c : fConstraint f get) (x : dom f),
-                constraintWitness get c = Some x -> constraintSat get c x.
+                constraintWitness c = Some x -> constraintSat c x.
         Admitted.
 
         Theorem constraintWitnessNoneEmpty :
             forall (c : fConstraint f get),
-                constraintWitness get c = None -> constraintEmpty get c = true.
+                constraintWitness c = None -> constraintEmpty c = true.
         Admitted.
 
         Theorem constraintSatSplitLeft :
             forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
-                constraintSat get (constraintLeftSplit get t c) x <->
-                    constraintSat get c x /\ tests f t x = true.
+                constraintSat (constraintLeftSplit t c) x <->
+                    constraintSat c x /\ tests f t x = true.
         Admitted.
 
         Theorem constraintSatSplitRight :
             forall (c : fConstraint f get) (t : testIndex f) (x : dom f),
-                constraintSat get (constraintRightSplit get t c) x <->
-                    constraintSat get c x /\ tests f t x = false.
+                constraintSat (constraintRightSplit t c) x <->
+                    constraintSat c x /\ tests f t x = false.
         Admitted.
 
         Theorem constraintInitFullNotEmpty :
-            constraintEmpty get (constraintInitFull get) = false.
+            constraintEmpty (@constraintInitFull f get) = false.
         Admitted.
 
         Theorem constraintWitnessSingleton :
             forall (x : dom f),
-                constraintWitness get (constraintInitSingleton get x) = Some x.
+                constraintWitness (@constraintInitSingleton f get x) = Some x.
         Admitted.
 
         Theorem constraintSatSingletonUnique :
             forall (x y : dom f),
-                constraintSat get (constraintInitSingleton get x) y -> x = y.
+                constraintSat (@constraintInitSingleton f get x) y -> x = y.
         Admitted.
 
     End fConstraintFacts.
@@ -449,7 +449,7 @@ Section FeatureSpaceConstraint.
     Inductive featureSpaceConstraint : forall {n : nat}, featureSig n -> Type :=
     | featureSpaceConstraintNil : featureSpaceConstraint featureSigNil
     | featureSpaceConstraintCons
-        (f : feature) (get : getFeatureKind f) (c : fConstraint f get)
+        {f : feature} {get : getFeatureKind f} (c : fConstraint f get)
         {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) :
             featureSpaceConstraint (featureSigCons f get fs).
 
@@ -457,7 +457,7 @@ Section FeatureSpaceConstraint.
     Local Fixpoint update {n : nat} {fs : featureSig n}
                           (cs : featureSpaceConstraint fs) {struct cs} :
                             forall (i : fin n),
-                                (forall (get : getFeatureKind (getFeature fs i)),
+                                (forall {get : getFeatureKind (getFeature fs i)},
                                     fConstraint (getFeature fs i) get -> fConstraint (getFeature fs i) get) ->
                                 featureSpaceConstraint fs :=
         match cs in @featureSpaceConstraint n fs
@@ -479,16 +479,16 @@ Section FeatureSpaceConstraint.
                             fConstraint (getFeature (featureSigCons f get fs) i) get' ->
                             fConstraint (getFeature (featureSigCons f get fs) i) get') ->
                         featureSpaceConstraint (featureSigCons f get fs) with
-                | F1 => fun fs cs _ ap => featureSpaceConstraintCons f get (ap get c) cs
-                | FS i => fun fs cs k ap => featureSpaceConstraintCons f get c (k i ap)
+                | F1 => fun fs cs _ ap => featureSpaceConstraintCons (ap get c) cs
+                | FS i => fun fs cs k ap => featureSpaceConstraintCons c (k i ap)
                 end fs cs (update cs)
         end.
 
     Inductive sat : forall {n : nat} {fs : featureSig n}, featureSpaceConstraint fs -> featureVec fs -> Prop :=
     | featureSpaceSatNil : sat featureSpaceConstraintNil featureVecNil
-    | featureSpaceSatCons {f : feature} (get : getFeatureKind f) (c : fConstraint f get) (x : dom f)
+    | featureSpaceSatCons {f : feature} {get : getFeatureKind f} (c : fConstraint f get) (x : dom f)
                           {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) (vs : featureVec fs) :
-        constraintSat get c x -> sat cs vs -> sat (featureSpaceConstraintCons f get c cs) (featureVecCons get x vs).
+        constraintSat c x -> sat cs vs -> sat (featureSpaceConstraintCons c cs) (featureVecCons get x vs).
 
     Fixpoint empty {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : bool :=
         match cs with
@@ -500,8 +500,8 @@ Section FeatureSpaceConstraint.
     Fixpoint witness {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) : option (featureVec fs) :=
         match cs with
         | featureSpaceConstraintNil => Some (featureVecNil)
-        | featureSpaceConstraintCons f get c cs =>
-            match constraintWitness get c with
+        | @featureSpaceConstraintCons _ get c _ _ cs =>
+            match constraintWitness c with
             | None => None
             | Some x =>
                 match witness cs with
@@ -513,21 +513,21 @@ Section FeatureSpaceConstraint.
 
     Definition splitLeft {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
             featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => update cs i (fun get => constraintLeftSplit get t).
+        fun cs => update cs i (fun _ => constraintLeftSplit t).
 
     Definition splitRight {n : nat} {fs : featureSig n} (i : fin n) (t : testIndex (getFeature fs i)) :
             featureSpaceConstraint fs -> featureSpaceConstraint fs :=
-        fun cs => update cs i (fun get => constraintRightSplit get t).
+        fun cs => update cs i (fun _ => constraintRightSplit t).
 
     Fixpoint init {n : nat} (X : fin n -> bool) {fs : featureSig n} (vs : featureVec fs) : featureSpaceConstraint fs :=
         match vs in @featureVec n fs return (fin n -> bool) -> featureSpaceConstraint fs with
         | featureVecNil => fun _ => featureSpaceConstraintNil
-        | @featureVecCons f get x _ fs vs => fun X =>
+        | featureVecCons _ x vs => fun X =>
             let c :=
-                if X F1 then constraintInitFull get
-                else constraintInitSingleton get x
+                if X F1 then constraintInitFull
+                else constraintInitSingleton x
             in
-            featureSpaceConstraintCons f get c (init (fun k => X (FS k)) vs)
+            featureSpaceConstraintCons c (init (fun k => X (FS k)) vs)
         end X.
 
 
