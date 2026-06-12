@@ -18,7 +18,7 @@ module F : FeatureSig = struct
 
   let fs =
     Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
-    Coq_featureSigCons (1, float_feature, Coq_isBooleanFeature,
+    Coq_featureSigCons (1, float_feature, Coq_isContinuousFeature,
     Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
     Coq_featureSigNil)))
 
@@ -66,7 +66,7 @@ module Input : DTInputProblem = struct
       (Coq_featureSigCons (1, float_feature, Coq_isContinuousFeature,
       (Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
       Coq_featureSigNil)))),
-    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr 30.0, 1,
+    Coq_featureVecCons (float_feature, Coq_isContinuousFeature, Obj.repr 30.0, 1,
       (Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
       Coq_featureSigNil)),
     Coq_featureVecCons (string_enum_feature s, Coq_isStringEnumFeature s, Obj.repr "s2", 0,
