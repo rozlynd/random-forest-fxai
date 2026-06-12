@@ -253,9 +253,10 @@ Section FeatureSpaceConstraint.
         | intros (H1 & H2); destruct c; destruct t; destruct x; now inversion H1 ].
     Qed.
 
-    Theorem boolConstraintInitFullNotEmpty :
-        boolConstraintEmpty boolConstraintInitFull = false.
-    Proof. reflexivity. Qed.
+    Theorem boolConstraintInitFullSat :
+        forall (x : bool),
+            boolConstraintSat boolConstraintInitFull x.
+    Proof. constructor. Qed.
 
     Theorem boolConstraintWitnessSingleton :
         forall (x : bool),
@@ -427,8 +428,9 @@ Section FeatureSpaceConstraint.
                     constraintSat c x /\ tests f t x = false.
         Admitted.
 
-        Theorem constraintInitFullNotEmpty :
-            constraintEmpty (@constraintInitFull f get) = false.
+        Theorem constraintInitFullSat :
+            forall (x : dom f),
+                constraintSat (@constraintInitFull f get) x.
         Admitted.
 
         Theorem constraintWitnessSingleton :
@@ -671,15 +673,20 @@ Section FeatureSpaceConstraint.
                 try (now apply constraintSpaceSatSplitRight with (x := x)).
         Qed.
 
-        Theorem constraintSpaceInitNotEmpty :
-            forall (X : fin n -> bool) (vs : featureVec fs),
-                empty (init X vs) = false.
+        Theorem constraintSpaceInitSat :
+            forall (X : fin n -> bool) (vs vs' : featureVec fs),
+                (forall (i : fin n), X i = false -> getValue' vs' i = getValue' vs i) ->
+                sat (init X vs) vs'.
         Proof.
-            intros X vs; induction vs; try reflexivity;
-            apply Bool.orb_false_intro; try apply IHvs;
-            destruct (X F1);
-            [ apply constraintInitFullNotEmpty
-            | eapply constraintSatNotEmpty, constraintWitnessSomeSat, constraintWitnessSingleton ].
+            intros X vs vs' H; induction vs; simpl;
+            dependent destruction vs'; constructor.
+            -   specialize H with F1; destruct (X F1);
+                [ apply constraintInitFullSat
+                | rewrite 2 getValueF1' in H; rewrite H; try reflexivity;
+                  apply constraintWitnessSomeSat, constraintWitnessSingleton ].
+            -   apply IHvs; intros i HX;
+                specialize H with (FS i);
+                rewrite 2 getValueFS' in H; now rewrite H.
         Qed.
 
         Theorem constraintSpaceInitSatValuesUnique :
