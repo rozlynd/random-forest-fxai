@@ -458,7 +458,7 @@ Module MakeFinSetOn (S : FinSig) : FinSetOn S.
             | inleft k =>
                 let s' :=
                     let s' := remove k s in
-                    if mem k s && negb (p (compl s')) then
+                    if p s' then
                         s'
                     else
                         s
