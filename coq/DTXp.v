@@ -742,19 +742,33 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
                 end
         end.
 
-    Lemma refute_aux_preserves_agrees :
-        forall (v : featureVec C.fs) (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t),
-            True.
+    Lemma refute_aux_Some_sat :
+        forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
+            refute_aux c0 C dt = Some v -> sat C v.
+    Admitted.
+
+    Lemma refute_aux_Some_contradicts :
+        forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
+            refute_aux c0 C dt = Some v -> ~ C.K.eq (C.eval dt v) c0.
+    Admitted.
+
+    Lemma refute_aux_None_unsat :
+        forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
+            refute_aux c0 C dt = None -> sat C v -> C.eval dt v = c0.
     Admitted.
 
 
     Definition init : S.t -> featureVec C.fs -> featureSpaceConstraint C.fs :=
         fun X => init (fun i => S.mem i X).
 
-    Lemma init_constraintNotEmpty :
-        forall (X : S.t) (v : featureVec C.fs),
-            empty (init X v) = false.
-    Proof. intros; apply constraintSpaceInitNotEmpty. Qed.
+    Lemma init_constraintEquivSat :
+        forall (X : S.t) (v v' : featureVec C.fs),
+            FD.equiv (S.compl X) v v' -> sat (init X v) v'.
+    Proof.
+        intros X v v' H; apply constraintSpaceInitSat;
+        intros i Hi; symmetry; apply H, S.In_compl;
+        intros abs; apply S.mem_spec in abs; now rewrite abs in Hi.
+    Qed.
 
     Lemma init_constraintSatAgrees :
         forall (X : S.t) (v v' : featureVec C.fs),
@@ -774,17 +788,20 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Theorem refute_success_agrees :
         forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
             refute dt v X = Some v' -> FD.equiv (S.compl X) v v'.
-    Admitted.
+    Proof. intros; eapply init_constraintSatAgrees, refute_aux_Some_sat; eassumption. Qed.
 
     Theorem refute_success_contradicts :
         forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
             refute dt v X = Some v' -> ~ C.K.eq (C.eval dt v) (C.eval dt v').
-    Admitted.
+    Proof. intros; symmetry; eapply refute_aux_Some_contradicts; eassumption. Qed.
 
     Theorem refute_fail :
         forall (dt : C.t) (v v' : featureVec C.fs) (X : S.t),
             refute dt v X = None -> FD.equiv (S.compl X) v v' -> C.K.eq (C.eval dt v) (C.eval dt v').
-    Admitted.
+    Proof.
+        intros dt v v' X H1 H2; apply refute_aux_None_unsat with (v := v') in H1; try (now symmetry);
+        now apply init_constraintEquivSat.
+    Qed.
 
 End DtWCXpCheckerImpl.
 
