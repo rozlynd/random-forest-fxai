@@ -1,6 +1,6 @@
 From RFXP Require Import Utils Features DT Xp Explainers.
 
-Require Import Floats.
+Require Import Floats Equality.
 
 
 Module Type DTExplanationProblem <: ExplanationProblem :=
@@ -453,6 +453,12 @@ Section FeatureSpaceConstraint.
         {n : nat} {fs : featureSig n} (cs : featureSpaceConstraint fs) :
             featureSpaceConstraint (featureSigCons f get fs).
 
+    Lemma featureSpaceConstraintConsInversion :
+        forall {n : nat} {fs : featureSig n} {f : feature} {get : getFeatureKind f}
+               (c1 c2 : fConstraint f get) (cs1 cs2 : featureSpaceConstraint fs),
+            featureSpaceConstraintCons c1 cs1 = featureSpaceConstraintCons c2 cs2 -> c1 = c2 /\ cs1 = cs2.
+    Admitted. (* ??? *)
+
     (* HERE BE DRAGONS *)
     Local Fixpoint update {n : nat} {fs : featureSig n}
                           (cs : featureSpaceConstraint fs) {struct cs} :
@@ -657,12 +663,28 @@ Section FeatureSpaceConstraint.
         Theorem constraintSpaceInitNotEmpty :
             forall (X : fin n -> bool) (vs : featureVec fs),
                 empty (init X vs) = false.
-        Admitted.
+        Proof.
+            intros X vs; induction vs; try reflexivity;
+            apply Bool.orb_false_intro; try apply IHvs;
+            destruct (X F1);
+            [ apply constraintInitFullNotEmpty
+            | eapply constraintSatNotEmpty, constraintWitnessSomeSat, constraintWitnessSingleton ].
+        Qed.
 
         Theorem constraintSpaceInitSatValuesUnique :
             forall (X : fin n -> bool) (vs vs' : featureVec fs) (i : fin n),
                 sat (init X vs) vs' -> X i = false -> getValue' vs' i = getValue' vs i.
-        Admitted.
+        Proof.
+            intros X vs vs' i Hsat HX;
+            remember (init X vs) as cs eqn:E;
+            induction Hsat; try (now inversion i);
+            dependent destruction vs;
+            apply featureSpaceConstraintConsInversion in E as (E1 & E2);
+            dependent destruction i.
+            -   rewrite 2 getValueF1'; rewrite HX in E1;
+                rewrite E1 in H; now apply constraintSatSingletonUnique in H.
+            -   rewrite 2 getValueFS'; eapply IHHsat; eassumption.
+        Qed.
 
     End fConstraintSpaceFacts.
 
