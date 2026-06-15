@@ -450,27 +450,59 @@ Module MakeFinSetOn (S : FinSig) : FinSetOn S.
     Proof. intros s i; unfold compl; rewrite diff_spec, all_spec; tauto. Qed.
 
 
-    Local Program Fixpoint shrink_aux (p : t -> bool) (s : t) (i : nat) : t + { S.n < i } :=
-        match i with
-        | 0 => inleft s
-        | S i =>
-            match @to_fin S.n i with
-            | inleft k =>
-                let s' :=
-                    let s' := remove k s in
-                    if p s' then
-                        s'
-                    else
-                        s
-                in
-                match shrink_aux p s' i with
-                | inleft r => inleft r
+    Local Fixpoint shrink_aux (p : t -> bool) (s : t) (i : nat) : t + { S.n < i }.
+        refine (
+            match i with
+            | 0 => inleft s
+            | S i =>
+                match @to_fin S.n i with
+                | inleft k =>
+                    let s' :=
+                        let s' := remove k s in
+                        if p s' then
+                            s'
+                        else
+                            s
+                    in
+                    match shrink_aux p s' i with
+                    | inleft r => inleft r
+                    | inright _ => inright _
+                    end
                 | inright _ => inright _
                 end
-            | inright _ => inright _
-            end
-        end.
-    Solve All Obligations with Lia.lia.
+            end); lia.
+    Defined.
+
+    Lemma shrink_aux_spec1 :
+        forall (p : t -> bool) (s : t),
+            shrink_aux p s 0 = inleft s.
+    Proof. reflexivity. Qed.
+
+    Lemma shrink_aux_spec2 :
+        forall (p : t -> bool) (s r : t) (i : nat) (q : i < S.n),
+            p (remove (to_fin' (exist _ i q)) s) = true ->
+                shrink_aux p (remove (to_fin' (exist _ i q)) s) i = inleft r ->
+                shrink_aux p s (S i) = inleft r.
+    Proof.
+        intros p s r i q H1 H2; simpl;
+        destruct (to_fin i) eqn:Ei; try lia;
+        replace (to_fin' (exist _ i q)) with f in *;
+            try (apply to_nat_inj, to_fin_to_nat; now rewrite to_fin_to_nat');
+        now rewrite H1, H2.
+    Qed.
+
+    Lemma shrink_aux_spec3 :
+        forall (p : t -> bool) (s r : t) (i : nat) (q : i < S.n),
+            p (remove (to_fin' (exist _ i q)) s) = false ->
+                shrink_aux p s i = inleft r ->
+                shrink_aux p s (S i) = inleft r.
+    Proof.
+        intros p s r i q H1 H2; simpl;
+        destruct (to_fin i) eqn:Ei; try lia;
+        replace (to_fin' (exist _ i q)) with f in *;
+            try (apply to_nat_inj, to_fin_to_nat; now rewrite to_fin_to_nat');
+        now rewrite H1, H2.
+    Qed.
 
     Program Definition shrink p s :=
         match shrink_aux p s S.n with
@@ -481,11 +513,45 @@ Module MakeFinSetOn (S : FinSig) : FinSetOn S.
 
     Theorem shrink_spec1 : forall (p : t -> bool) (s : t),
         Subset (shrink p s) s.
-    Admitted.
+    Proof.
+        intros p;
+        assert (aux : forall (i : nat) (q : i <= S.n) (s r : t),
+                        shrink_aux p s i = inleft r -> Subset r s).
+        {
+            intros i; induction i as [| i IH ]; intros q s r H;
+                try (now inversion H);
+            simpl in H; destruct (to_fin i) as [k |] eqn:Hi; try lia;
+            destruct (p (remove k s)) eqn:Hp.
+            -   destruct (shrink_aux p (remove k s) i) eqn:Hs; inversion H;
+                intros x Hx; cut (In x (remove k s));
+                [ intros Hrem; now apply remove_spec in Hrem
+                | apply IH with (r := r); try lia; now subst r ].
+            -   destruct (shrink_aux p s i) eqn:Hs; inversion H;
+                apply IH; try lia; now subst r.
+        }
+        intros; apply aux with (p := p) (i := S.n); try lia;
+        unfold shrink; now destruct (shrink_aux p s S.n); try lia.
+    Qed.
 
     Theorem shrink_spec2 : forall (p : t -> bool) (s : t),
         p s = true -> p (shrink p s) = true.
-    Admitted.
+    Proof.
+        intros p;
+        assert (aux : forall (i : nat) (q : i <= S.n) (s r : t),
+                        shrink_aux p s i = inleft r -> p s = true -> p r = true).
+        {
+            intros i; induction i as [| i IH ]; intros q s r H;
+                try (now inversion H);
+            simpl in H; destruct (to_fin i) as [k |] eqn:Hi; try lia;
+            destruct (p (remove k s)) eqn:Hp.
+            -   destruct (shrink_aux p (remove k s) i) eqn:Hs; inversion H;
+                intros Ht; apply IH with (s := remove k s); try lia; now subst r.
+            -   destruct (shrink_aux p s i) eqn:Hs; inversion H;
+                apply IH; try lia; now subst r.
+        }
+        intros; apply aux with (s := s) (i := S.n); try lia;
+        unfold shrink; now destruct (shrink_aux p s S.n); try lia.
+    Qed.
 
     Theorem shrink_spec3 : forall (p : t -> bool) (s1 s2 : t),
         p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).

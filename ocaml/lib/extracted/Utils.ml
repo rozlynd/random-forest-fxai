@@ -758,15 +758,11 @@ module MakeFinSetOn =
     (fun fO fS n -> if n=0 then fO () else fS (n-1))
       (fun _ -> Some s)
       (fun i0 ->
-      let filtered_var = to_fin S.n i0 in
-      (match filtered_var with
-       | Some k ->
-         let s' = let s' = remove k s in if p s' then s' else s in
-         let filtered_var0 = shrink_aux p s' i0 in
-         (match filtered_var0 with
-          | Some r -> Some r
-          | None -> None)
-       | None -> None))
+      match to_fin S.n i0 with
+      | Some k ->
+        let s' = let s' = remove k s in if p s' then s' else s in
+        shrink_aux p s' i0
+      | None -> None)
       i
 
   (** val shrink : (t -> bool) -> t -> t **)
