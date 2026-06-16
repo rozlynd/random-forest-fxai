@@ -128,6 +128,8 @@ Module AXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Mo
     Module Impl := AXpIterativeFinderBaseOn E Chk.
     Include Impl.
 
+    Module XpFacts := ExplanationsFacts E.
+
     Lemma checkWAXp_reflect :
         forall X, Bool.reflect (Xp.WAXp X) (checkWAXp X).
     Admitted.
@@ -149,7 +151,9 @@ Module AXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Mo
         -   intros Y HSubs HY;
             apply S.shrink_spec3 with (p := checkWAXp);
                 try (now apply (Bool.reflect_iff _ _ (checkWAXp_reflect _)));
-                assumption.
+                try assumption;
+            intros s1 s2; rewrite <- 2 (Bool.reflect_iff _ _ (checkWAXp_reflect _));
+            apply XpFacts.WAXp_monotonic.
     Qed.
 
     Theorem findAXpSane :
@@ -176,6 +180,8 @@ Module CXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Mo
     Module Impl := CXpIterativeFinderBaseOn E Chk.
     Include Impl.
 
+    Module XpFacts := ExplanationsFacts E.
+
     Lemma findCXp_isWCXp :
         forall X, Xp.WCXp X -> Xp.WCXp (findCXp X).
     Proof.
@@ -193,7 +199,9 @@ Module CXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Mo
         -   intros Y HSubs HY;
             apply S.shrink_spec3 with (p := Chk.checkWCXp);
                 try (now apply (Bool.reflect_iff _ _ (Chk.checkWCXpSound _)));
-                assumption.
+                try assumption;
+            intros s1 s2; rewrite <- 2 (Bool.reflect_iff _ _ (Chk.checkWCXpSound _));
+            apply XpFacts.WCXp_monotonic.
     Qed.
 
     Theorem findCXpSane :

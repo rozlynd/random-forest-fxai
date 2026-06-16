@@ -381,8 +381,10 @@ Module Type FinSetOn (S : FinSig) <: Sets
     Axiom shrink_spec2 : forall (p : t -> bool) (s : t),
         p s = true -> p (shrink p s) = true.
 
-    Axiom shrink_spec3 : forall (p : t -> bool) (s1 s2 : t),
-        p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).
+    Axiom shrink_spec3 : forall (p : t -> bool),
+        (forall (s1 s2 : t), Subset s1 s2 -> p s1 = true -> p s2 = true) ->
+        forall (s1 s2 : t),
+            p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).
 
     Global Parameter compl_compat : Proper (Equal ==> Equal) compl.
 
@@ -511,51 +513,93 @@ Module MakeFinSetOn (S : FinSig) : FinSetOn S.
         end.
     Solve All Obligations with Lia.lia.
 
+    Lemma shrink_aux_Subset : forall (p : t -> bool) (i : nat) (q : i <= S.n) (s r : t),
+        shrink_aux p s i = inleft r -> Subset r s.
+    Proof.
+        intros p i; induction i as [| i IH ]; intros q s r H;
+            try (now inversion H);
+        simpl in H; destruct (to_fin i) as [k |] eqn:Hi; try lia;
+        destruct (p (remove k s)) eqn:Hp.
+        -   destruct (shrink_aux p (remove k s) i) eqn:Hs; inversion H;
+            intros x Hx; cut (In x (remove k s));
+            [ intros Hrem; now apply remove_spec in Hrem
+            | apply IH with (r := r); try lia; now subst r ].
+        -   destruct (shrink_aux p s i) eqn:Hs; inversion H;
+            apply IH; try lia; now subst r.
+    Qed.
+
     Theorem shrink_spec1 : forall (p : t -> bool) (s : t),
         Subset (shrink p s) s.
     Proof.
-        intros p;
-        assert (aux : forall (i : nat) (q : i <= S.n) (s r : t),
-                        shrink_aux p s i = inleft r -> Subset r s).
-        {
-            intros i; induction i as [| i IH ]; intros q s r H;
-                try (now inversion H);
-            simpl in H; destruct (to_fin i) as [k |] eqn:Hi; try lia;
-            destruct (p (remove k s)) eqn:Hp.
-            -   destruct (shrink_aux p (remove k s) i) eqn:Hs; inversion H;
-                intros x Hx; cut (In x (remove k s));
-                [ intros Hrem; now apply remove_spec in Hrem
-                | apply IH with (r := r); try lia; now subst r ].
-            -   destruct (shrink_aux p s i) eqn:Hs; inversion H;
-                apply IH; try lia; now subst r.
-        }
-        intros; apply aux with (p := p) (i := S.n); try lia;
+        intros; apply shrink_aux_Subset with (p := p) (i := S.n); try lia;
         unfold shrink; now destruct (shrink_aux p s S.n); try lia.
+    Qed.
+
+    Lemma shrink_aux_sat :forall (p : t -> bool) (i : nat) (q : i <= S.n) (s r : t),
+        shrink_aux p s i = inleft r -> p s = true -> p r = true.
+    Proof.
+        intros p i; induction i as [| i IH ]; intros q s r H;
+            try (now inversion H);
+        simpl in H; destruct (to_fin i) as [k |] eqn:Hi; try lia;
+        destruct (p (remove k s)) eqn:Hp.
+        -   destruct (shrink_aux p (remove k s) i) eqn:Hs; inversion H;
+            intros Ht; apply IH with (s := remove k s); try lia; now subst r.
+        -   destruct (shrink_aux p s i) eqn:Hs; inversion H;
+            apply IH; try lia; now subst r.
     Qed.
 
     Theorem shrink_spec2 : forall (p : t -> bool) (s : t),
         p s = true -> p (shrink p s) = true.
     Proof.
-        intros p;
-        assert (aux : forall (i : nat) (q : i <= S.n) (s r : t),
-                        shrink_aux p s i = inleft r -> p s = true -> p r = true).
-        {
-            intros i; induction i as [| i IH ]; intros q s r H;
-                try (now inversion H);
-            simpl in H; destruct (to_fin i) as [k |] eqn:Hi; try lia;
-            destruct (p (remove k s)) eqn:Hp.
-            -   destruct (shrink_aux p (remove k s) i) eqn:Hs; inversion H;
-                intros Ht; apply IH with (s := remove k s); try lia; now subst r.
-            -   destruct (shrink_aux p s i) eqn:Hs; inversion H;
-                apply IH; try lia; now subst r.
-        }
-        intros; apply aux with (s := s) (i := S.n); try lia;
+        intros; apply shrink_aux_sat with (p := p) (s := s) (i := S.n); try lia;
         unfold shrink; now destruct (shrink_aux p s S.n); try lia.
     Qed.
 
-    Theorem shrink_spec3 : forall (p : t -> bool) (s1 s2 : t),
-        p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).
-    Admitted.
+    Lemma shrink_aux_cut : forall (p : t -> bool) (i : nat) (q : i <= S.n) (s r : t) (x : elt),
+        shrink_aux p s i = inleft r -> In x r -> to_nat x < i ->
+            exists (c : t), Subset r c /\ p (remove x c) = false.
+    Proof.
+        intros p i; induction i as [| i IH ]; intros q s r x Hr Hx Hlt; try lia;
+        pose proof shrink_aux_Subset _ _ q _ _ Hr as Hsubr;
+        destruct (Nat.eq_dec (to_nat x) i) as [Hi | Hi];
+        simpl in Hr; destruct (to_fin i) as [k |] eqn:Hk; try lia;
+            try (replace x with k in *; [| apply to_nat_inj, to_fin_to_nat; now rewrite Hi ]);
+        destruct (p (remove k s)) eqn:Hrem.
+        -   destruct (shrink_aux p (remove k s) i) as [r' |] eqn:Hr'; inversion Hr; subst r'.
+            apply shrink_aux_Subset in Hr'; try lia;
+            now apply Hr', remove_spec in Hx.
+        -   exists s; split; try assumption.
+        -   destruct (shrink_aux p (remove k s) i) as [r' |] eqn:Hr'; inversion Hr; subst r';
+            destruct IH with (remove k s) r x; try lia; try assumption;
+            now eexists.
+        -   destruct (shrink_aux p s i) as [r' |] eqn:Hr'; inversion Hr; subst r';
+            destruct IH with s r x; try lia; try assumption;
+            now eexists.
+    Qed.
+
+    Theorem shrink_spec3 : forall (p : t -> bool),
+        (forall (s1 s2 : t), Subset s1 s2 -> p s1 = true -> p s2 = true) ->
+        forall (s1 s2 : t),
+            p s1 = true -> Subset s2 (shrink p s1) -> p s2 = true -> Equal s2 (shrink p s1).
+    Proof.
+        (* It suffices to prove [Subset (shrink p s1) s2].
+         * Let [In x (shrink p s1)]. There exists a [c] such that [Subset (shrink p s1) c]
+         * and [p (remove x c) = false].
+         * If [~ In x s2] then [Subset s2 (remove x c))] and by monotonicity [p (remove x c) = true].
+         * This is absurd therefore [In x s2]. *)
+        intros p Hmono s1 s2 Hs1 HSubset Hs2;
+        cut (Subset (shrink p s1) s2);
+            try (intros; split; now auto);
+        intros x HIn;
+        unfold shrink in *; destruct (shrink_aux p s1 S.n) as [r |] eqn:Er; try lia;
+        destruct shrink_aux_cut with p S.n s1 r x as (c & Hc & Hrem);
+            try lia; try assumption; try (now apply to_nat_lt);
+        destruct (mem x s2) eqn:Hmem; try (now apply mem_spec);
+        exfalso; cut (Subset s2 (remove x c));
+        [ intros abs; now rewrite Hmono with s2 (remove x c) in Hrem
+        | intros y Hy; apply remove_spec; split; try auto;
+          intros abs; subst x; apply mem_spec in Hy; now rewrite Hy in Hmem ].
+    Qed.
 
 
     Global Instance compl_compat : Proper (Equal ==> Equal) compl.
