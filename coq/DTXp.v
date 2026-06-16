@@ -745,7 +745,26 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Lemma refute_aux_Some_sat :
         forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
             refute_aux c0 C dt = Some v -> sat C v.
-    Admitted.
+    Proof.
+        intros c0 C dt v; generalize dependent C;
+        induction dt as [ c | i t dt1 IH1 dt2 IH2 ]; simpl; intros C H.
+        -   destruct (C.K.eq_dec c c0); try discriminate H;
+            now apply constraintSpaceWitnessSomeSat.
+        -   destruct (empty (splitLeft i t C)).
+            +   destruct (empty (splitRight i t C)); try discriminate H;
+                cut (sat (splitRight i t C) v);
+                [ intros; eapply constraintSpaceSatSplitRight; eassumption
+                | now apply IH2 ].
+            +   destruct (refute_aux c0 (splitLeft i t C) dt1) as [f|] eqn:Hdt1.
+                *   inversion H; subst f;
+                    cut (sat (splitLeft i t C) v);
+                    [ intros; eapply constraintSpaceSatSplitLeft; eassumption
+                    | now apply IH1 ].
+                *   destruct (empty (splitRight i t C)); try discriminate H;
+                    cut (sat (splitRight i t C) v);
+                    [ intros; eapply constraintSpaceSatSplitRight; eassumption
+                    | now apply IH2 ].
+    Qed.
 
     Lemma refute_aux_Some_contradicts :
         forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
