@@ -34,7 +34,7 @@ end
 
 module Dt = MakeDT (F) (O)
 
-module Input : DTInputProblem = struct
+module Input : DTInputProblem with type K.t = string = struct
 
   let n = F.n
 
