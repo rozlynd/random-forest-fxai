@@ -854,12 +854,14 @@ End DtWCXpChecker.
 
 Module DtAXpFinder (E_ : DTInputProblem) : AXpFinder with Module E := E_.
     Module Chk := DtWCXpChecker E_.
-    Module Impl := AXpIterativeFinder E_ Chk.
+    Module E := E_.
+    Module Impl := AXpIterativeFinderOn E_ Chk.
     Include Impl.
 End DtAXpFinder.
 
 Module DtCXpFinder (E_ : DTInputProblem) : CXpFinder with Module E := E_.
     Module Chk := DtWCXpChecker E_.
-    Module Impl := CXpIterativeFinder E_ Chk.
+    Module E := E_.
+    Module Impl := CXpIterativeFinderOn E_ Chk.
     Include Impl.
 End DtCXpFinder.

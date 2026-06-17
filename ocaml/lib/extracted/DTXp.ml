@@ -416,13 +416,13 @@ module DtAXpFinder =
  struct
   module Chk = DtWCXpChecker(E_)
 
-  module Impl = AXpIterativeFinder(E_)(Chk)
-
   module E = E_
+
+  module Impl = AXpIterativeFinderOn(E_)(Chk)
 
   module Xp = Impl.Xp
 
-  (** val findAXp : E.S.t -> E.S.t **)
+  (** val findAXp : E_.S.t -> E_.S.t **)
 
   let findAXp =
     Impl.findAXp
@@ -443,13 +443,13 @@ module DtCXpFinder =
  struct
   module Chk = DtWCXpChecker(E_)
 
-  module Impl = CXpIterativeFinder(E_)(Chk)
-
   module E = E_
+
+  module Impl = CXpIterativeFinderOn(E_)(Chk)
 
   module Xp = Impl.Xp
 
-  (** val findCXp : E.S.t -> E.S.t **)
+  (** val findCXp : E_.S.t -> E_.S.t **)
 
   let findCXp =
     Impl.findCXp

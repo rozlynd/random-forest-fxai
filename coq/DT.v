@@ -27,8 +27,14 @@ Arguments Node {n fs K}.
 Arguments DTSpec {n fs K}.
 
 
-Module Type DTOn (F : FeatureSig) (O : Output) := ClassifierOn F O
-    with Definition t := dt F.fs O.K.t.
+Module Type DTOn (F : FeatureSig) (O : Output).
+    Include ClassifierOn F O with Definition t := dt F.fs O.K.t.
+
+    Axiom evalCorrect :
+        forall (dt : t) (x : featureVec F.fs) (c : O.K.t),
+            DTSpec x c dt <-> eval dt x = c.
+
+End DTOn.
 
 Module Type DT <: Classifier := FeatureSig <+ Output <+ DTOn.
 
