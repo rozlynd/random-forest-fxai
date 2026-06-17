@@ -769,7 +769,37 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Lemma refute_aux_Some_contradicts :
         forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
             refute_aux c0 C dt = Some v -> ~ C.K.eq (C.eval dt v) c0.
-    Admitted.
+    Proof.
+        intros c0 C dt v H;
+        remember (C.eval dt v) as c1 eqn:Hc; symmetry in Hc; apply C.evalCorrect in Hc;
+        assert (Hsat : sat C v); try (eapply refute_aux_Some_sat; eassumption);
+        generalize dependent C;
+        induction dt as [ c | i t dt1 IH1 dt2 IH2 ]; simpl; intros C H Hsat.
+        -   inversion Hc; now destruct (C.K.eq_dec c c0).
+        -   destruct (empty (splitLeft i t C)) eqn:Hel.
+            +   destruct (empty (splitRight i t C)) eqn:Her; try discriminate H;
+                assert (Hsat2 : sat (splitRight i t C) v); try (eapply refute_aux_Some_sat; eassumption);
+                apply IH2 with (C := splitRight i t C); try assumption;
+                inversion Hc; apply inj_pair2 in H1; try auto;
+                exfalso; subst;
+                rewrite constraintSpaceSatNotEmpty with (x := v) in Hel; try discriminate Hel;
+                now apply constraintSpaceSatSplitLeft.
+            +   destruct (refute_aux c0 (splitLeft i t C) dt1) as [v' |] eqn:H'.
+                *   inversion H; subst v';
+                    assert (Hsat1 : sat (splitLeft i t C) v); try (eapply refute_aux_Some_sat; eassumption);
+                    apply IH1 with (C := splitLeft i t C); try assumption;
+                    inversion Hc; apply inj_pair2 in H1; try auto;
+                    exfalso; subst;
+                    apply constraintSpaceSatSplitLeft in Hsat1 as (_ & Hsat1);
+                    unfold featureTest' in H2; now rewrite Hsat1 in H2.
+                *   destruct (empty (splitRight i t C)) eqn:Her; try discriminate H;
+                    assert (Hsat2 : sat (splitRight i t C) v); try (eapply refute_aux_Some_sat; eassumption);
+                    apply IH2 with (C := splitRight i t C); try assumption;
+                    inversion Hc; apply inj_pair2 in H1; try auto;
+                    exfalso; subst;
+                    apply constraintSpaceSatSplitRight in Hsat2 as (_ & Hsat2);
+                    unfold featureTest' in H2; now rewrite Hsat2 in H2.
+    Qed.
 
     Lemma refute_aux_None_unsat :
         forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
