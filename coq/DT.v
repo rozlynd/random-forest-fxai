@@ -13,10 +13,18 @@ Section DTDef.
            (_ : testIndex (getFeature fs i))
            (dt1 dt2 : dt).
 
+    Inductive DTSpec (x : featureVec fs) (c : K) : dt -> Prop :=
+    | leafPath : DTSpec x c (Leaf c)
+    | nodePathLeft : forall i t dt1 dt2,
+        featureTest' x i t = true -> DTSpec x c dt1 -> DTSpec x c (Node i t dt1 dt2)
+    | nodePathRight : forall i t dt1 dt2,
+        featureTest' x i t = false -> DTSpec x c dt2 -> DTSpec x c (Node i t dt1 dt2).
+
 End DTDef.
 
 Arguments Leaf {n fs K}.
 Arguments Node {n fs K}.
+Arguments DTSpec {n fs K}.
 
 
 Module Type DTOn (F : FeatureSig) (O : Output) := ClassifierOn F O
@@ -38,13 +46,6 @@ Module MakeDT (F : FeatureSig) (O : Output) <: DTOn F O.
             else
                 eval dt2 x
         end.
-
-    Inductive DTSpec (x : featureVec F.fs) (c : O.K.t) : t -> Prop :=
-    | leafPath : DTSpec x c (Leaf c)
-    | nodePathLeft : forall i t dt1 dt2,
-        featureTest' x i t = true -> DTSpec x c dt1 -> DTSpec x c (Node i t dt1 dt2)
-    | nodePathRight : forall i t dt1 dt2,
-        featureTest' x i t = false -> DTSpec x c dt2 -> DTSpec x c (Node i t dt1 dt2).
 
     Theorem evalCorrect : forall (dt : t) (x : featureVec F.fs) (c : O.K.t),
         DTSpec x c dt <-> eval dt x = c.
