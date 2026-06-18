@@ -804,7 +804,31 @@ Module DtWCXpCheckerImpl (C : DT) (S : FinSet with Definition n := C.n).
     Lemma refute_aux_None_unsat :
         forall (c0 : C.K.t) (C : featureSpaceConstraint C.fs) (dt : C.t) (v : featureVec C.fs),
             refute_aux c0 C dt = None -> sat C v -> C.eval dt v = c0.
-    Admitted.
+    Proof.
+        intros c0 C dt v; rewrite <- C.evalCorrect; generalize dependent C;
+        induction dt as [ c | i t dt1 IH1 dt2 IH2 ]; simpl; intros C H Hsat.
+        -   destruct (C.K.eq_dec c c0); try (subst c; constructor);
+            destruct (constraintSpaceNonEmptyWitnessSome C) as (x & Hx);
+                try (eapply constraintSpaceSatNotEmpty; eassumption);
+            now rewrite Hx in H.
+        -   destruct (empty (splitLeft i t C)) eqn:Hel.
+            +   destruct (empty (splitRight i t C)) eqn:Her.
+                *   exfalso; cut (empty C = true);
+                    [ intros abs; now rewrite constraintSpaceSatNotEmpty with (x := v) in abs
+                    | now erewrite constraintSpaceEmptySplit, Hel, Her ].
+                *   destruct (featureTest' v i t) eqn:Htest;
+                        try (rewrite constraintSpaceSatNotEmpty with (x := v) in Hel; try discriminate Hel;
+                            now apply constraintSpaceSatSplitLeft);
+                    constructor 3; try apply IH2 with (C := splitRight i t C); try assumption;
+                    now apply constraintSpaceSatSplitRight.
+            +   destruct (refute_aux c0 (splitLeft i t C) dt1) eqn:H'; try discriminate H;
+                destruct (featureTest' v i t) eqn:Htest.
+                *   constructor 2; try apply IH1 with (C := splitLeft i t C); try assumption;
+                    now apply constraintSpaceSatSplitLeft.
+                *   assert (Hsat2 : sat (splitRight i t C) v); try (now apply constraintSpaceSatSplitRight);
+                    rewrite constraintSpaceSatNotEmpty with (x := v) in H; try assumption;
+                    constructor 3; try apply IH2 with (C := splitRight i t C); assumption.
+    Qed.
 
 
     Definition init : S.t -> featureVec C.fs -> featureSpaceConstraint C.fs :=
