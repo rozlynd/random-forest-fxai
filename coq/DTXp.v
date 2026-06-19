@@ -419,44 +419,68 @@ Section FeatureSpaceConstraint.
         Theorem constraintSatNotEmpty :
             forall (c : fConstraint f) (x : dom (getf f)),
                 constraintSat c x -> constraintEmpty c = false.
-        Admitted.
+        Proof.
+            destruct c; simpl;
+            [ eapply boolConstraintSatNotEmpty | eapply floatConstraintSatNotEmpty | eapply senumConstraintSatNotEmpty ].
+        Qed.
 
         Theorem constraintWitnessSomeSat :
             forall (c : fConstraint f) (x : dom (getf f)),
                 constraintWitness c = Some x -> constraintSat c x.
-        Admitted.
+        Proof.
+            destruct c; simpl;
+            [ eapply boolConstraintWitnessSomeSat | eapply floatConstraintWitnessSomeSat | eapply senumConstraintWitnessSomeSat ].
+        Qed.
 
         Theorem constraintWitnessNoneEmpty :
             forall (c : fConstraint f),
                 constraintWitness c = None -> constraintEmpty c = true.
-        Admitted.
+        Proof.
+            destruct c; simpl;
+            [ eapply boolConstraintWitnessNoneEmpty | eapply floatConstraintWitnessNoneEmpty | eapply senumConstraintWitnessNoneEmpty ].
+        Qed.
 
         Theorem constraintSatSplitLeft :
             forall (c : fConstraint f) (t : testIndex (getf f)) (x : dom (getf f)),
                 constraintSat (constraintLeftSplit t c) x <->
                     constraintSat c x /\ tests (getf f) t x = true.
-        Admitted.
+        Proof.
+            destruct c; simpl;
+            [ eapply boolConstraintSatSplitLeft | eapply floatConstraintSatSplitLeft | eapply senumConstraintSatSplitLeft ].
+        Qed.
 
         Theorem constraintSatSplitRight :
             forall (c : fConstraint f) (t : testIndex (getf f)) (x : dom (getf f)),
                 constraintSat (constraintRightSplit t c) x <->
                     constraintSat c x /\ tests (getf f) t x = false.
-        Admitted.
+        Proof.
+            destruct c; simpl;
+            [ eapply boolConstraintSatSplitRight | eapply floatConstraintSatSplitRight | eapply senumConstraintSatSplitRight ].
+        Qed.
 
         Theorem constraintInitFullSat :
             forall (x : dom (getf f)),
                 constraintSat (@constraintInitFull f) x.
-        Admitted.
+        Proof.
+            destruct f; simpl;
+            [ eapply floatConstraintInitFullSat | eapply boolConstraintInitFullSat | eapply senumConstraintInitFullSat ].
+        Qed.
 
         Theorem constraintWitnessSingleton :
             forall (x : dom (getf f)),
                 constraintWitness (@constraintInitSingleton f x) = Some x.
-        Admitted.
+        Proof.
+            destruct f; simpl;
+            [ eapply floatConstraintWitnessSingleton | eapply boolConstraintWitnessSingleton | eapply senumConstraintWitnessSingleton ].
+        Qed.
 
         Theorem constraintSatSingletonUnique :
             forall (x y : dom (getf f)),
                 constraintSat (@constraintInitSingleton f x) y -> x = y.
-        Admitted.
+        Proof.
+            destruct f; simpl;
+            [ eapply floatConstraintSatSingletonUnique | eapply boolConstraintSatSingletonUnique | eapply senumConstraintSatSingletonUnique ].
+        Qed.
 
     End fConstraintFacts.
 
