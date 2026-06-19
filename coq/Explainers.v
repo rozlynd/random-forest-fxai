@@ -132,7 +132,11 @@ Module AXpIterativeFinderOn (Import E : InputProblem) (Chk : WCXpChecker with Mo
 
     Lemma checkWAXp_reflect :
         forall X, Bool.reflect (Xp.WAXp X) (checkWAXp X).
-    Admitted.
+    Proof.
+        intros X; unfold checkWAXp; destruct (Chk.checkWCXpSound (S.compl X)); constructor.
+        -   now apply XpFacts.XpDual_uncompl_of_WCXp_is_not_WAXp.
+        -   now apply XpFacts.XpDual_uncompl_of_not_WCXp_is_WAXp.
+    Qed.
 
     Lemma findAXp_isWAXp :
         forall X, Xp.WAXp X -> Xp.WAXp (findAXp X).
