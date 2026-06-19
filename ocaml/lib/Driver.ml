@@ -17,9 +17,9 @@ module F : FeatureSig = struct
   let n = 3
 
   let fs =
-    Coq_featureSigCons (2, boolean_feature, Coq_isBooleanFeature,
-    Coq_featureSigCons (1, float_feature, Coq_isContinuousFeature,
-    Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
+    Coq_featureSigCons (2, Coq_isBooleanFeature,
+    Coq_featureSigCons (1, Coq_isContinuousFeature,
+    Coq_featureSigCons (0, Coq_isStringEnumFeature s,
     Coq_featureSigNil)))
 
 end
@@ -62,14 +62,14 @@ module Input : DTInputProblem with type K.t = string = struct
         Leaf "0"))
 
   let v =
-    Coq_featureVecCons (boolean_feature, Coq_isBooleanFeature, Obj.repr true, 2,
-      (Coq_featureSigCons (1, float_feature, Coq_isContinuousFeature,
-      (Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
+    Coq_featureVecCons (Coq_isBooleanFeature, Obj.repr true, 2,
+      (Coq_featureSigCons (1, Coq_isContinuousFeature,
+      (Coq_featureSigCons (0, Coq_isStringEnumFeature s,
       Coq_featureSigNil)))),
-    Coq_featureVecCons (float_feature, Coq_isContinuousFeature, Obj.repr 30.0, 1,
-      (Coq_featureSigCons (0, string_enum_feature s, Coq_isStringEnumFeature s,
+    Coq_featureVecCons (Coq_isContinuousFeature, Obj.repr 30.0, 1,
+      (Coq_featureSigCons (0, Coq_isStringEnumFeature s,
       Coq_featureSigNil)),
-    Coq_featureVecCons (string_enum_feature s, Coq_isStringEnumFeature s, Obj.repr "s2", 0,
+    Coq_featureVecCons (Coq_isStringEnumFeature s, Obj.repr "s2", 0,
       Coq_featureSigNil,
     Coq_featureVecNil)))
 

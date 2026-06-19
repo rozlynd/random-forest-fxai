@@ -93,28 +93,28 @@ type fConstraint =
 | CFloat of floatConstraint
 | CSEnum of StringSet.t * senumConstraint
 
-val constraintEmpty : feature -> getFeatureKind -> fConstraint -> bool
+val constraintEmpty : featureKind -> fConstraint -> bool
 
-val constraintWitness : feature -> getFeatureKind -> fConstraint -> dom option
+val constraintWitness : featureKind -> fConstraint -> dom option
 
 val constraintLeftSplit :
-  feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint
+  featureKind -> testIndex -> fConstraint -> fConstraint
 
 val constraintRightSplit :
-  feature -> getFeatureKind -> testIndex -> fConstraint -> fConstraint
+  featureKind -> testIndex -> fConstraint -> fConstraint
 
-val constraintInitFull : feature -> getFeatureKind -> fConstraint
+val constraintInitFull : featureKind -> fConstraint
 
-val constraintInitSingleton : feature -> getFeatureKind -> dom -> fConstraint
+val constraintInitSingleton : featureKind -> dom -> fConstraint
 
 type featureSpaceConstraint =
 | Coq_featureSpaceConstraintNil
-| Coq_featureSpaceConstraintCons of feature * getFeatureKind * fConstraint
-   * int * featureSig * featureSpaceConstraint
+| Coq_featureSpaceConstraintCons of featureKind * fConstraint * int
+   * featureSig * featureSpaceConstraint
 
 val update :
-  int -> featureSig -> featureSpaceConstraint -> fin -> (getFeatureKind ->
-  fConstraint -> fConstraint) -> featureSpaceConstraint
+  int -> featureSig -> featureSpaceConstraint -> fin -> (fConstraint ->
+  fConstraint) -> featureSpaceConstraint
 
 val empty : int -> featureSig -> featureSpaceConstraint -> bool
 

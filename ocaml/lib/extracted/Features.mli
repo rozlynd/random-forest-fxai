@@ -29,23 +29,22 @@ val string_enum_feature : StringSet.t -> feature
 
 val enum_feature : int -> feature
 
-type getFeatureKind =
+type featureKind =
 | Coq_isContinuousFeature
 | Coq_isBooleanFeature
 | Coq_isStringEnumFeature of StringSet.t
 
+val getf : featureKind -> feature
+
 type featureSig =
 | Coq_featureSigNil
-| Coq_featureSigCons of int * feature * getFeatureKind * featureSig
+| Coq_featureSigCons of int * featureKind * featureSig
 
 type featureVec =
 | Coq_featureVecNil
-| Coq_featureVecCons of feature * getFeatureKind * dom * int * featureSig
-   * featureVec
+| Coq_featureVecCons of featureKind * dom * int * featureSig * featureVec
 
-type feature_wrap = (feature, getFeatureKind) sigT
-
-val getFeatureWrap : int -> featureSig -> fin -> feature_wrap
+val getFeatureKind : int -> featureSig -> fin -> featureKind
 
 val getFeature : int -> featureSig -> fin -> feature
 

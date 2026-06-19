@@ -42,40 +42,44 @@ let string_enum_feature _ t0 x =
 let enum_feature _ t0 x =
   Obj.magic t0 x
 
-type getFeatureKind =
+type featureKind =
 | Coq_isContinuousFeature
 | Coq_isBooleanFeature
 | Coq_isStringEnumFeature of StringSet.t
 
+(** val getf : featureKind -> feature **)
+
+let getf = function
+| Coq_isContinuousFeature -> float_feature
+| Coq_isBooleanFeature -> boolean_feature
+| Coq_isStringEnumFeature s -> string_enum_feature s
+
 type featureSig =
 | Coq_featureSigNil
-| Coq_featureSigCons of int * feature * getFeatureKind * featureSig
+| Coq_featureSigCons of int * featureKind * featureSig
 
 type featureVec =
 | Coq_featureVecNil
-| Coq_featureVecCons of feature * getFeatureKind * dom * int * featureSig
-   * featureVec
+| Coq_featureVecCons of featureKind * dom * int * featureSig * featureVec
 
-type feature_wrap = (feature, getFeatureKind) sigT
+(** val getFeatureKind : int -> featureSig -> fin -> featureKind **)
 
-(** val getFeatureWrap : int -> featureSig -> fin -> feature_wrap **)
-
-let rec getFeatureWrap _ fs i =
+let rec getFeatureKind _ fs i =
   match fs with
   | Coq_featureSigNil ->
     (match i with
      | F1 x -> Obj.magic __ x
      | FS (x, x0) -> Obj.magic __ x x0)
-  | Coq_featureSigCons (n0, f, get, fs0) ->
-    let x = getFeatureWrap n0 fs0 in
+  | Coq_featureSigCons (n0, f, fs0) ->
+    let x = getFeatureKind n0 fs0 in
     (match i with
-     | F1 _ -> Coq_existT (f, get)
+     | F1 _ -> f
      | FS (_, i0) -> x i0)
 
 (** val getFeature : int -> featureSig -> fin -> feature **)
 
 let getFeature n fs i =
-  projT1 (getFeatureWrap n fs i)
+  getf (getFeatureKind n fs i)
 
 (** val getValueS :
     int -> featureSig -> featureVec -> fin -> (feature, dom) sigT **)
@@ -86,10 +90,10 @@ let rec getValueS _ _ vs i =
     (match i with
      | F1 x -> Obj.magic __ x
      | FS (x, x0) -> Obj.magic __ x x0)
-  | Coq_featureVecCons (f, _, x, n0, fs0, vs0) ->
+  | Coq_featureVecCons (f, x, n0, fs0, vs0) ->
     let x0 = getValueS n0 fs0 vs0 in
     (match i with
-     | F1 _ -> Coq_existT (f, x)
+     | F1 _ -> Coq_existT ((getf f), x)
      | FS (_, i0) -> x0 i0)
 
 (** val getValue' : int -> featureSig -> featureVec -> fin -> dom **)

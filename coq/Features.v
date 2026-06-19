@@ -80,54 +80,51 @@ Section Features.
     End EnumFeature.
 
 
-    (* TODO: include more features (ints?) *)
-    (* TODO: abstract away the float and string stuff (modules??) *)
-    Inductive getFeatureKind : feature -> Type :=
-    | isContinuousFeature : getFeatureKind float_feature
-    | isBooleanFeature : getFeatureKind boolean_feature
-    | isStringEnumFeature (s : StringSet.t) : getFeatureKind (string_enum_feature s)
-    (*| isEnumFeature (n : nat) : getFeatureKind (enum_feature n)*).
+    Variant featureKind :=
+    | isContinuousFeature
+    | isBooleanFeature
+    | isStringEnumFeature (s : StringSet.t).
+
+    Definition getf (f : featureKind) : feature :=
+        match f with
+        | isContinuousFeature => float_feature
+        | isBooleanFeature => boolean_feature
+        | isStringEnumFeature s => string_enum_feature s
+        end.
 
     Inductive featureSig : nat -> Type :=
     | featureSigNil : featureSig 0
-    | featureSigCons {n : nat} (f : feature) (get : getFeatureKind f)
+    | featureSigCons {n : nat} (f : featureKind)
                      (fs : featureSig n) : featureSig (S n).
 
     Inductive featureVec : forall {n : nat}, featureSig n -> Type :=
     | featureVecNil : featureVec featureSigNil
-    | featureVecCons (f : feature) (get : getFeatureKind f) (x : dom f)
+    | featureVecCons (f : featureKind) (x : dom (getf f))
                      {n : nat} {fs : featureSig n} (vs : featureVec fs) :
-                        featureVec (featureSigCons f get fs).
+                        featureVec (featureSigCons f fs).
 
 
-    Definition feature_wrap : Type := { f : feature & getFeatureKind f }.
-    Definition float_feature_wrap : feature_wrap := existT _ float_feature isContinuousFeature.
-    Definition boolean_feature_wrap : feature_wrap := existT _ boolean_feature isBooleanFeature.
-    Definition string_enum_feature_wrap (s : StringSet.t) : feature_wrap := existT _ (string_enum_feature s) (isStringEnumFeature s).
-    (*Definition enum_feature_wrap (n : nat) : feature_wrap := existT _ (enum_feature n) (isEnumFeature n).*)
-
-
-    Fixpoint getFeatureWrap {n : nat} (fs : featureSig n) {struct fs} : fin n -> feature_wrap :=
-        match fs in featureSig n return fin n -> feature_wrap with
+    Fixpoint getFeatureKind {n : nat} (fs : featureSig n) {struct fs} : fin n -> featureKind :=
+        match fs in featureSig n return fin n -> featureKind with
         | featureSigNil => fun i =>
             match i in fin 0 with
             end
-        | featureSigCons f get fs => fun i =>
-            match i in fin (S p) return (fin p -> feature_wrap) -> feature_wrap with
-            | F1 => fun _ => existT _ f get
+        | featureSigCons f fs => fun i =>
+            match i in fin (S p) return (fin p -> featureKind) -> featureKind with
+            | F1 => fun _ => f
             | FS i => fun k => k i
-            end (getFeatureWrap fs)
+            end (getFeatureKind fs)
         end.
 
     Definition getFeature {n : nat} (fs : featureSig n) (i : fin n) : feature :=
-        projT1 (getFeatureWrap fs i).
+        getf (getFeatureKind fs i).
 
-    Lemma getFeatureF1 {n : nat} (f : feature) (get : getFeatureKind f) (fs : featureSig n) :
-        getFeature (featureSigCons f get fs) F1 = f.
+    Lemma getFeatureF1 {n : nat} (f : featureKind) (fs : featureSig n) :
+        getFeature (featureSigCons f fs) F1 = getf f.
     Proof. reflexivity. Qed.
 
-    Lemma getFeatureFS {n : nat} (f : feature) (get : getFeatureKind f) (fs : featureSig n) (i : fin n) :
-        getFeature (featureSigCons f get fs) (FS i) = getFeature fs i.
+    Lemma getFeatureFS {n : nat} (f : featureKind) (fs : featureSig n) (i : fin n) :
+        getFeature (featureSigCons f fs) (FS i) = getFeature fs i.
     Proof. reflexivity. Qed.
 
 
@@ -137,24 +134,24 @@ Section Features.
         | featureVecNil => fun i =>
             match i in fin 0 with
             end
-        | featureVecCons f get x vs => fun i =>
+        | featureVecCons f x vs => fun i =>
             match i in fin (S p)
                 return (forall (i : fin p), { f : feature & dom f })
                     -> { f : feature & dom f }
             with
-            | F1 => fun _ => existT _ f x
+            | F1 => fun _ => existT _ (getf f) x
             | FS i => fun k => k i
             end (getValueS vs)
         end.
 
     Lemma getValueSF1 {n : nat} {fs : featureSig n}
-                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) :
-        getValueS (featureVecCons f get x vs) F1 = existT _ f x.
+                      (f : featureKind) (x : dom (getf f)) (vs : featureVec fs) :
+        getValueS (featureVecCons f x vs) F1 = existT _ (getf f) x.
     Proof. reflexivity. Qed.
 
     Lemma getValueSFS {n : nat} {fs : featureSig n}
-                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) (i : fin n) :
-        getValueS (featureVecCons f get x vs) (FS i) = getValueS vs i.
+                      (f : featureKind) (x : dom (getf f)) (vs : featureVec fs) (i : fin n) :
+        getValueS (featureVecCons f x vs) (FS i) = getValueS vs i.
     Proof. reflexivity. Qed.
 
 
@@ -163,13 +160,13 @@ Section Features.
         projT2 (getValueS vs i).
 
     Lemma getValueF1 {n : nat} {fs : featureSig n}
-                     (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) :
-        getValue (featureVecCons f get x vs) F1 = x.
+                     (f : featureKind) (x : dom (getf f)) (vs : featureVec fs) :
+        getValue (featureVecCons f x vs) F1 = x.
     Proof. reflexivity. Qed.
 
     Lemma getValueFS {n : nat} {fs : featureSig n}
-                     (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) (i : fin n) :
-        getValue (featureVecCons f get x vs) (FS i) = getValue vs i.
+                     (f : featureKind) (x : dom (getf f)) (vs : featureVec fs) (i : fin n) :
+        getValue (featureVecCons f x vs) (FS i) = getValue vs i.
     Proof. reflexivity. Qed.
 
     
@@ -187,7 +184,7 @@ Section Features.
     Lemma getValueS_Domain {n : nat} (fs : featureSig n) (vs : featureVec fs) (i : fin n) :
         projT1 (getValueS vs i) = getFeature fs i.
     Proof.
-        induction vs as [| f get x n fs vs IH ]; try (now inversion i);
+        induction vs as [| f x n fs vs IH ]; try (now inversion i);
         dependent destruction i.
         -   now rewrite getValueSF1, getFeatureF1.
         -   now rewrite getValueSFS, getFeatureFS, IH.
@@ -201,21 +198,21 @@ Section Features.
     Defined.
 
     Lemma getValueF1' {n : nat} {fs : featureSig n}
-                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) :
-        getValue' (featureVecCons f get x vs) F1 = x.
+                      (f : featureKind) (x : dom (getf f)) (vs : featureVec fs) :
+        getValue' (featureVecCons f x vs) F1 = x.
     Proof.
         unfold getValue';
-        remember (getValueS_Domain (featureSigCons f get fs) (featureVecCons f get x vs) F1) as E;
+        remember (getValueS_Domain (featureSigCons f fs) (featureVecCons f x vs) F1) as E;
         now rewrite <- Eqdep.Eq_rect_eq.eq_rect_eq with (h := E).
     Qed.
 
     Lemma getValueFS' {n : nat} {fs : featureSig n}
-                      (f : feature) (get : getFeatureKind f) (x : dom f) (vs : featureVec fs) (i : fin n) :
-        getValue' (featureVecCons f get x vs) (FS i) = getValue' vs i.
+                      (f : featureKind) (x : dom (getf f)) (vs : featureVec fs) (i : fin n) :
+        getValue' (featureVecCons f x vs) (FS i) = getValue' vs i.
     Proof.
         unfold getValue';
         remember (getValueS_Domain fs vs i) as E;
-        remember (getValueS_Domain (featureSigCons f get fs) (featureVecCons f get x vs) (FS i)) as E';
+        remember (getValueS_Domain (featureSigCons f fs) (featureVecCons f x vs) (FS i)) as E';
         replace E' with E; now try apply proof_irrelevance.
     Qed.
 
@@ -225,7 +222,7 @@ Section Features.
                             (t : testIndex (getFeature fs i)) : bool :=
         tests _ t (getValue' vs i).
 
-    Global Arguments featureVecCons {f} get x {n fs} vs.
+    Global Arguments featureVecCons f x {n fs} vs.
 
 End Features.
 
@@ -246,9 +243,9 @@ Section Examples.
         StringSet.add "yes" (StringSet.singleton "no").
 
     Local Definition fs : featureSig 3 :=
-        featureSigCons float_feature isContinuousFeature
-            (featureSigCons (string_enum_feature s1) (isStringEnumFeature s1)
-                (featureSigCons (string_enum_feature s2) (isStringEnumFeature s2)
+        featureSigCons isContinuousFeature
+            (featureSigCons (isStringEnumFeature s1)
+                (featureSigCons (isStringEnumFeature s2)
                     featureSigNil)).
 
     Local Program Definition v : featureVec fs :=
