@@ -557,19 +557,21 @@ Section FeatureSpaceConstraint.
         Theorem constraintSpaceSatNotEmpty :
             forall (c : featureSpaceConstraint fs) (x : featureVec fs),
                 sat c x -> empty c = false.
-        Admitted.
+        Proof. intros c x H; induction H; simpl; erewrite ? constraintSatNotEmpty; now try eassumption. Qed.
 
         Corollary constraintSpaceEmptyUnsat :
             forall (c : featureSpaceConstraint fs) (x : featureVec fs),
                 empty c = true -> ~ sat c x.
-        Proof.
-            intros c x H abs; now rewrite constraintSpaceSatNotEmpty with (x := x) in H.
-        Qed.
+        Proof. intros c x H abs; now rewrite constraintSpaceSatNotEmpty with (x := x) in H. Qed.
 
         Theorem constraintSpaceWitnessSomeSat :
             forall (c : featureSpaceConstraint fs) (x : featureVec fs),
                 witness c = Some x -> sat c x.
-        Admitted.
+        Proof.
+            intros c x H; induction c; try (now inversion H; constructor); simpl in H;
+            destruct (constraintWitness c) eqn:Hwc; destruct (witness c0) eqn:Hwc0; inversion H;
+            constructor; now try apply IHc; try apply constraintWitnessSomeSat.
+        Qed.
 
         Corollary constraintSpaceEmptyWitnessNone :
             forall (c : featureSpaceConstraint fs),
@@ -589,7 +591,11 @@ Section FeatureSpaceConstraint.
         Theorem constraintSpaceWitnessNoneEmpty :
             forall (c : featureSpaceConstraint fs),
                 witness c = None -> empty c = true.
-        Admitted.
+        Proof.
+            intros c H; induction c; try (now inversion H); simpl in *;
+            destruct (constraintWitness c) eqn:Hwc; [destruct (witness c0) eqn:Hwc0|]; try discriminate H;
+            try (now rewrite IHc, Bool.orb_true_r); now rewrite constraintWitnessNoneEmpty.
+        Qed.
 
         Corollary constraintSpaceNonEmptyWitnessSome :
             forall (c : featureSpaceConstraint fs),
@@ -611,7 +617,21 @@ Section FeatureSpaceConstraint.
             forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
                 sat (splitLeft i t c) x <->
                     sat c x /\ tests (getFeature fs i) t (getValue' x i) = true.
-        Admitted.
+        Proof.
+            intros c i t x; unfold splitLeft; induction c; simpl; try (now inversion i);
+            dependent destruction i.
+            -   dependent destruction x; rewrite getValueF1'; split; intros H.
+                +   dependent destruction H; apply constraintSatSplitLeft in H as (Hsat & Htest); split;
+                    [ now constructor | auto ].
+                +   destruct H as (Hsat & Htest); dependent destruction Hsat;
+                    now constructor; try apply constraintSatSplitLeft.
+            -   dependent rewrite (@getFeatureFS n f get fs i) in t; dependent destruction x;
+                specialize IHc with i t x1; rewrite getValueFS'; split; intros H.
+                +   dependent destruction H; apply IHc in H0 as (Hsat & Htest); split;
+                    [ now constructor | auto ].
+                +   destruct H as (Hsat & Htest); dependent destruction Hsat;
+                    constructor; now try apply IHc.
+        Qed.
 
         Corollary constraintSpaceWitnessSplitLeft :
             forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
@@ -625,7 +645,21 @@ Section FeatureSpaceConstraint.
             forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
                 sat (splitRight i t c) x <->
                     sat c x /\ tests (getFeature fs i) t (getValue' x i) = false.
-        Admitted.
+        Proof.
+            intros c i t x; unfold splitLeft; induction c; simpl; try (now inversion i);
+            dependent destruction i.
+            -   dependent destruction x; rewrite getValueF1'; split; intros H.
+                +   dependent destruction H; apply constraintSatSplitRight in H as (Hsat & Htest); split;
+                    [ now constructor | auto ].
+                +   destruct H as (Hsat & Htest); dependent destruction Hsat;
+                    now constructor; try apply constraintSatSplitRight.
+            -   dependent rewrite (@getFeatureFS n f get fs i) in t; dependent destruction x;
+                specialize IHc with i t x1; rewrite getValueFS'; split; intros H.
+                +   dependent destruction H; apply IHc in H0 as (Hsat & Htest); split;
+                    [ now constructor | auto ].
+                +   destruct H as (Hsat & Htest); dependent destruction Hsat;
+                    constructor; now try apply IHc.
+        Qed.
 
         Corollary constraintSpaceWitnessSplitRight :
             forall (c : featureSpaceConstraint fs) (i : fin n) (t : testIndex (getFeature fs i)) (x : featureVec fs),
