@@ -155,7 +155,10 @@ Section ListMisc.
 
     Theorem filter_map_swap : forall (A B : Type) (f : A -> B) (p : B -> bool) (l : list A),
         filter p (map f l) = map f (filter (fun x => p (f x)) l).
-    Admitted.
+    Proof.
+        intros A B f p l; induction l as [| x l IH ]; try reflexivity;
+        simpl; destruct (p (f x)); now rewrite IH.
+    Qed.
 
 End ListMisc.
 
