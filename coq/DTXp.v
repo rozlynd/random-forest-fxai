@@ -269,6 +269,92 @@ Section FeatureSpaceConstraint.
     Proof. intros x y H; destruct x; destruct y; now inversion H. Qed.
 
 
+    Theorem floatConstraintSatNotEmpty :
+        forall (c : floatConstraint) (x : float_std),
+            floatConstraintSat c x -> floatConstraintEmpty c = false.
+    Admitted.
+
+    Theorem floatConstraintWitnessSomeSat :
+        forall (c : floatConstraint) (x : float_std),
+            floatConstraintWitness c = Some x -> floatConstraintSat c x.
+    Admitted.
+
+    Theorem floatConstraintWitnessNoneEmpty :
+        forall (c : floatConstraint),
+            floatConstraintWitness c = None -> floatConstraintEmpty c = true.
+    Admitted.
+
+    Theorem floatConstraintSatSplitLeft :
+        forall (c : floatConstraint) (t : float_test) (x : float_std),
+            floatConstraintSat (floatConstraintLeftSplit t c) x <->
+                floatConstraintSat c x /\ tests float_feature t x = true.
+    Admitted.
+
+    Theorem floatConstraintSatSplitRight :
+        forall (c : floatConstraint) (t : float_test) (x : float_std),
+            floatConstraintSat (floatConstraintRightSplit t c) x <->
+                floatConstraintSat c x /\ tests float_feature t x = false.
+    Admitted.
+
+    Theorem floatConstraintInitFullSat :
+        forall (x : float_std),
+            floatConstraintSat floatConstraintInitFull x.
+    Admitted.
+
+    Theorem floatConstraintWitnessSingleton :
+        forall (x : float_std),
+            floatConstraintWitness (floatConstraintInitSingleton x) = Some x.
+    Admitted.
+
+    Theorem floatConstraintSatSingletonUnique :
+        forall (x y : float_std),
+            floatConstraintSat (floatConstraintInitSingleton x) y -> x = y.
+    Admitted.
+
+
+    Theorem senumConstraintSatNotEmpty :
+        forall {s : StringSet.t} (c : senumConstraint s) (x : string_enum s),
+            senumConstraintSat c x -> senumConstraintEmpty c = false.
+    Admitted.
+
+    Theorem senumConstraintWitnessSomeSat :
+        forall {s : StringSet.t} (c : senumConstraint s) (x : string_enum s),
+            senumConstraintWitness c = Some x -> senumConstraintSat c x.
+    Admitted.
+
+    Theorem senumConstraintWitnessNoneEmpty :
+        forall {s : StringSet.t} (c : senumConstraint s),
+            senumConstraintWitness c = None -> senumConstraintEmpty c = true.
+    Admitted.
+
+    Theorem senumConstraintSatSplitLeft :
+        forall {s : StringSet.t} (c : senumConstraint s) (t : string_enum_test s) (x : string_enum s),
+            senumConstraintSat (senumConstraintLeftSplit t c) x <->
+                senumConstraintSat c x /\ tests (string_enum_feature s) t x = true.
+    Admitted.
+
+    Theorem senumConstraintSatSplitRight :
+        forall {s : StringSet.t} (c : senumConstraint s) (t : string_enum_test s) (x : string_enum s),
+            senumConstraintSat (senumConstraintRightSplit t c) x <->
+                senumConstraintSat c x /\ tests (string_enum_feature s) t x = false.
+    Admitted.
+
+    Theorem senumConstraintInitFullSat :
+        forall {s : StringSet.t} (x : string_enum s),
+            senumConstraintSat (senumConstraintInitFull s) x.
+    Admitted.
+
+    Theorem senumConstraintWitnessSingleton :
+        forall {s : StringSet.t} (x : string_enum s),
+            senumConstraintWitness (senumConstraintInitSingleton x) = Some x.
+    Admitted.
+
+    Theorem senumConstraintSatSingletonUnique :
+        forall {s : StringSet.t} (x y : string_enum s),
+            senumConstraintSat (senumConstraintInitSingleton x) y -> x = y.
+    Admitted.
+
+
     (* Definitions of witness, left/right split and init on the sum-type of constraints *)
 
     Variant fConstraint : featureKind -> Type :=
