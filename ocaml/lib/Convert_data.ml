@@ -22,21 +22,21 @@ let rec _vector_and_features_from_parsing (v:parsed_vector) (fs:parsed_features)
     begin
       match vt, ft with
       | ParsedBoolVectorElement(b), ParsedBoolFeature ->
-        (Coq_featureVecCons(boolean_feature, Coq_isBooleanFeature, 
+        (Coq_featureVecCons(Coq_isBooleanFeature, 
                             Obj.repr b, i, next_sig, next_feature), 
         (i+1),
-        Coq_featureSigCons (i, boolean_feature, Coq_isBooleanFeature, next_sig))
+        Coq_featureSigCons (i, Coq_isBooleanFeature, next_sig))
       | ParsedFloatVectorElement(f), ParsedFloatFeature ->
-        (Coq_featureVecCons(float_feature, Coq_isContinuousFeature, 
+        (Coq_featureVecCons(Coq_isContinuousFeature, 
                             Obj.repr f, i, next_sig, next_feature), 
         (i+1),
-        Coq_featureSigCons (i, float_feature, Coq_isContinuousFeature, next_sig)) (* il y avait un 0 à la place de i *)
+        Coq_featureSigCons (i, Coq_isContinuousFeature, next_sig)) (* il y avait un 0 à la place de i *)
       | ParsedEnumVectorElement(s), ParsedEnumFeature(_ss) -> 
         let ss = set_of_string_list _ss in
-        (Coq_featureVecCons(string_enum_feature ss, Coq_isStringEnumFeature ss, 
+        (Coq_featureVecCons(Coq_isStringEnumFeature ss, 
                             Obj.repr s, i, next_sig, next_feature), 
         (i+1),
-        Coq_featureSigCons (i, string_enum_feature ss, Coq_isStringEnumFeature ss, next_sig))
+        Coq_featureSigCons (i, Coq_isStringEnumFeature ss, next_sig))
       | _, _ -> 
         failwith "Error in vector_from_parsing (3) : the given vector does not respect features declaration"
     end

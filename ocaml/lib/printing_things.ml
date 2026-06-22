@@ -5,7 +5,7 @@ open Features
 let rec _featureTypeAtIndex features i cpt =
   match features with
   | Coq_featureSigNil -> failwith "Error : incompatibility between features and tree."
-  | Coq_featureSigCons (_, _, get, q) -> 
+  | Coq_featureSigCons (_, get, q) -> 
     if i = cpt then get
     else _featureTypeAtIndex q i (cpt+1)
 ;;
@@ -49,12 +49,9 @@ let get_string_of_get_and_index get test_index = match get with
 ;;
 let rec string_of_featureSig prefix f = match f with
   | Coq_featureSigNil -> prefix ^ "Coq_featureSigNil"
-  | Coq_featureSigCons (i, f, get, next_sig) ->
+  | Coq_featureSigCons (i, get, next_sig) ->
     let get_string, _ = get_string_of_get_and_index get (Obj.repr ()) in
-    (* print_endline "debug : on entre dans string_of_feature"; *)
-    let string_of_feature_f = string_of_feature f in
-    (* print_endline "debug : on vient de sortir de string_of_feature"; *)
-    prefix ^ "Coq_featureSigCons(" ^ string_of_int i ^ ", " ^ string_of_feature_f ^ ", " ^ 
+    prefix ^ "Coq_featureSigCons(" ^ string_of_int i ^ ", " ^ 
     get_string ^ ",\n" ^ (string_of_featureSig prefix next_sig) ^ ")"
 ;;
 
@@ -63,8 +60,7 @@ let rec _string_of_vector v =
   (* print_endline "debug : appel à _string_of_vector"; *)
   match v with
   | Coq_featureVecNil -> "Coq_featureVecNil"
-  | Coq_featureVecCons(f, get, test_index, i, feature_sig, q) -> 
-    let f_string = string_of_feature f in
+  | Coq_featureVecCons(get, test_index, i, feature_sig, q) -> 
     (* print_endline "debug : f_string obtenu"; *)
     
     let get_string, test_index_string = get_string_of_get_and_index get test_index in
@@ -77,7 +73,7 @@ let rec _string_of_vector v =
     (* print_endline "debug : next_vec_string obtenu"; *)
     
     "Coq_featureVecCons(" ^ 
-    f_string ^ ", " ^ get_string ^ ", " ^ test_index_string ^ ", "  ^ (string_of_int i) ^ ",\n" ^
+    get_string ^ ", " ^ test_index_string ^ ", "  ^ (string_of_int i) ^ ",\n" ^
     feature_sig_string ^ ",\n" ^ next_vec_string ^ ")"
 ;;
 
