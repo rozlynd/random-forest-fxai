@@ -108,6 +108,24 @@ Section FeatureSpaceConstraint.
         end.
     Next Obligation. now apply q, choose_1. Qed.
 
+    Lemma senumConstraintWitness_Some :
+        forall {s : StringSet.t} (p : StringSet.t) (q : StringSet.Subset p s) (e : string_enum s),
+            senumConstraintWitness (SEnum s p q) = Some e -> StringSet.choose p = Some (proj1_sig e).
+    Proof.
+        intros s p q e; simpl;
+        set (h := senumConstraintWitness_obligation_1 s p q); clearbody h;
+        destruct (StringSet.choose p) as [f |] eqn:E; intros H; now inversion H.
+    Qed.
+
+    Lemma senumConstraintWitness_None :
+        forall {s : StringSet.t} (p : StringSet.t) (q : StringSet.Subset p s),
+            senumConstraintWitness (SEnum s p q) = None -> StringSet.choose p = None.
+    Proof.
+        intros s p q; simpl;
+        set (h := senumConstraintWitness_obligation_1 s p q); clearbody h;
+        destruct (StringSet.choose p) as [f |] eqn:E; intros H; now inversion H.
+    Qed.
+
 
     (* Split constraints on the left or right *)
 
@@ -315,44 +333,79 @@ Section FeatureSpaceConstraint.
     Theorem senumConstraintSatNotEmpty :
         forall {s : StringSet.t} (c : senumConstraint s) (x : string_enum s),
             senumConstraintSat c x -> senumConstraintEmpty c = false.
-    Admitted.
+    Proof.
+        intros s [p q] x; simpl; intros H;
+        destruct (StringSet.is_empty p) eqn:abs; try reflexivity; exfalso;
+        apply is_empty_2 in abs; eapply abs, H.
+    Qed.
 
     Theorem senumConstraintWitnessSomeSat :
         forall {s : StringSet.t} (c : senumConstraint s) (x : string_enum s),
             senumConstraintWitness c = Some x -> senumConstraintSat c x.
-    Admitted.
+    Proof. intros s [p q] x H; now apply senumConstraintWitness_Some, choose_1 in H. Qed.
 
     Theorem senumConstraintWitnessNoneEmpty :
         forall {s : StringSet.t} (c : senumConstraint s),
             senumConstraintWitness c = None -> senumConstraintEmpty c = true.
-    Admitted.
+    Proof. intros s [p q] H; now apply senumConstraintWitness_None, choose_2, is_empty_1 in H. Qed.
 
     Theorem senumConstraintSatSplitLeft :
         forall {s : StringSet.t} (c : senumConstraint s) (t : string_enum_test s) (x : string_enum s),
             senumConstraintSat (senumConstraintLeftSplit t c) x <->
                 senumConstraintSat c x /\ tests (string_enum_feature s) t x = true.
-    Admitted.
+    Proof.
+        intros s [p q] [f] x; simpl;
+        assert (h : Morphisms.Proper (Morphisms.respectful eq eq) f). {
+            intros u v E; now rewrite E.
+        }
+        split.
+        -   intros H; split; [eapply filter_1 | eapply filter_2]; eassumption.
+        -   intros (H1 & H2); now apply filter_3.
+    Qed.
 
     Theorem senumConstraintSatSplitRight :
         forall {s : StringSet.t} (c : senumConstraint s) (t : string_enum_test s) (x : string_enum s),
             senumConstraintSat (senumConstraintRightSplit t c) x <->
                 senumConstraintSat c x /\ tests (string_enum_feature s) t x = false.
-    Admitted.
+    Proof.
+        intros s [p q] [f] x; simpl;
+        assert (h : Morphisms.Proper (Morphisms.respectful eq eq) (fun x => negb (f x))). {
+            intros u v E; now rewrite E.
+        }
+        split.
+        -   intros H; split; [apply filter_1 with (f := fun x => negb (f x)) |]; try assumption;
+            apply Bool.negb_true_iff; now apply filter_2 in H.
+        -   intros (H1 & H2); apply filter_3; try assumption; now apply Bool.negb_true_iff.
+    Qed.
 
     Theorem senumConstraintInitFullSat :
         forall {s : StringSet.t} (x : string_enum s),
             senumConstraintSat (senumConstraintInitFull s) x.
-    Admitted.
+    Proof. now intros s [x q]. Qed.
 
     Theorem senumConstraintWitnessSingleton :
         forall {s : StringSet.t} (x : string_enum s),
             senumConstraintWitness (senumConstraintInitSingleton x) = Some x.
-    Admitted.
+    Proof.
+        intros s x;
+        destruct (senumConstraintInitSingleton) as (p & q) eqn:Ec; inversion Ec as (H);
+        destruct (senumConstraintWitness (SEnum s p q)) as [e |] eqn:E.
+        -   apply senumConstraintWitness_Some in E;
+            rewrite <- H in E; apply StringSet.choose_spec1, singleton_1 in E; f_equal;
+            destruct e; destruct x; apply ProofIrrelevance.ProofIrrelevanceTheory.subset_eq_compat;
+            now inversion E.
+        -   apply senumConstraintWitness_None in E;
+            rewrite <- H in E; apply StringSet.choose_spec2 in E;
+            exfalso; eapply E, singleton_2; reflexivity.
+    Qed.
 
     Theorem senumConstraintSatSingletonUnique :
         forall {s : StringSet.t} (x y : string_enum s),
             senumConstraintSat (senumConstraintInitSingleton x) y -> x = y.
-    Admitted.
+    Proof.
+        intros s [x q] [y r] H; apply singleton_1 in H;
+        now apply ProofIrrelevance.ProofIrrelevanceTheory.subset_eq_compat.
+    Qed.
 
 
     (* Definitions of witness, left/right split and init on the sum-type of constraints *)
