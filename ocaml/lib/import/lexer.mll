@@ -7,8 +7,11 @@
 
 
 let digit = ['0'-'9']
+let hex_digit = ['0'-'9' 'a'-'f']
 let int_ = digit+
-let float_ = digit* '.' digit+ | digit+ '.'
+let dec_float = '-'? (digit* '.' digit+ | digit+ '.')
+let hex_float = '-'? '0' ('x'|'X') ('0'|'1') '.' hex_digit+ ('p'|'P') ('+'|'-') digit+
+let float_ = dec_float | hex_float
 let next_line =   '\r' | '\n' | "\r\n"
 let true_ = "true" | "True" | "TRUE"
 let false_ = "false" | "False" | "FALSE"
