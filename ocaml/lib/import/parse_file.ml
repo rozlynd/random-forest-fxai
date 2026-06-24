@@ -13,12 +13,12 @@ let report_error filename lexbuf msg =
 (* Dans le cas où l'analyse syntaxique s'est bien passée, *)
 (* draw the DT *)
 let read_file filename =
-  print_string "debug : parsing file...";
+  (* print_string "debug : parsing file..."; *)
   let input = open_in filename in
   let filebuf = Lexing.from_channel input in
   try
     let fs, t, v = Parser.main Lexer.token filebuf in 
-    print_endline "done.";
+    (* print_endline "done."; *)
     fs, t, v
     (* print_tree t;
     print_vector v *)

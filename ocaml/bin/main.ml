@@ -29,60 +29,73 @@ let string_of_int_list l =
   | x :: l -> aux ("[ " ^ string_of_int x) l
 ;;
 
+let help_string = 
+  "The program must be called like this :\n
+  rfxp filename     -- to just have the result of the explanation
+  rfxp -v filename  -- to have informations about the process.
+";;
 
-let main_parsing () =
+let logger (verbose:bool) (s:string) =
+  if verbose then print_string s
+;;
+
+(* let main_parsing () =
   let filename = "test_input_file.txt" in
   let fs, t, v = Import.Parse_file.read_file filename in
   Import.Parsing_utils.print_features fs;
   Import.Parsing_utils.print_tree t;
   Import.Parsing_utils.print_vector v
-;;
+;; *)
 
 
 
-let main_file _filename =
+let main_file _filename verbose =
+  let log = logger verbose in
+
   (* let _filename = "filename.txt" in *)
   let module D = Driver_file.MakeData (struct
     let filename = _filename
   end) in
 
-  print_string "debug : défintion du module Input...";
+  log "debug : défintion du module Input...";
   let module Input = MakeDTInputProblem (D) in
-  print_endline "done.\n";
+  log "done.\n\n";
 
 
-  print_endline "debug : affichage du vecteur :";
+  (* log "debug : affichage du vecteur :\n";
   Printing_things.print_vector Input.v;
-  print_endline "debug : fin affichage du vecteur.\n";
+  log "debug : fin affichage du vecteur.\n\n";
 
-  print_endline "debug : affichage de l'arbre :";
+  log "debug : affichage de l'arbre :\n";
   Printing_things.print_tree Input.k Input.fs;
-  print_endline "debug : fin affichage de l'arbre.\n";
+  log "debug : fin affichage de l'arbre.\n\n"; *)
 
 
-  print_string "debug : défintion du module Find..." ;
+  log "debug : défintion du module Find..." ;
   let module Find = DtAXpFinder (Input) in
-  print_endline "done.";
+  log "done.\n";
 
-  print_string "debug : recherche...";
+  log "debug : recherche...";
   let axp = Find.findAXp Input.S.all in
-  print_endline "done.";
+  log "done.\n";
 
-  print_string "debug : transformation en liste...";
+  log "debug : transformation en liste...";
   let out = string_of_int_list (as_list (module Input.S) axp) in
-  print_endline "done.";
+  log "done.\n";
 
-  print_endline "\nresult :";
+  log "\nresult :\n\n";
   print_endline out;
-  print_endline "\nmain executed.";
+  log "\nmain executed.\n\n";
 ;;
 
 
 let () =
-  if Array.length Sys.argv > 1 then
-    main_file Sys.argv.(1)
+  if Array.length Sys.argv = 2 then
+  main_file Sys.argv.(1) false
+  else if Array.length Sys.argv = 3 && Sys.argv.(1) = "-v" then
+    main_file Sys.argv.(2) true
   else
-    main_parsing ()
+    failwith ("Error in calling the program.\n" ^ help_string)
 
 
 
