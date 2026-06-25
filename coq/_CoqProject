@@ -7,6 +7,7 @@
 ./Voting.v
 ./DT.v
 ./DTXp.v
+./DTGenVectors.v
 ./RF.v
 ./CNF.v
 ./Sat.v
