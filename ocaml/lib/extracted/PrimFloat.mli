@@ -5,6 +5,8 @@ val eqb : Float64.t -> Float64.t -> bool
 
 val ltb : Float64.t -> Float64.t -> bool
 
+val leb : Float64.t -> Float64.t -> bool
+
 val div : Float64.t -> Float64.t -> Float64.t
 
 val next_down : Float64.t -> Float64.t

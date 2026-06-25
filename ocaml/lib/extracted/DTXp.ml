@@ -114,11 +114,20 @@ let floatConstraintLeftSplit t0 c =
   then if get_sign t0 then c else FEmpty
   else (match c with
         | FEmpty -> FEmpty
-        | FSingleton a -> if ltb a t0 then FSingleton a else FEmpty
+        | FSingleton a ->
+          let filtered_var = FloatOTF.compare a t0 in
+          (match filtered_var with
+           | Lt -> FSingleton a
+           | _ -> FEmpty)
         | FRange (a, b) ->
-          if ltb a t0
-          then if ltb b t0 then FRange (a, b) else FRange (a, t0)
-          else FEmpty)
+          let filtered_var = FloatOTF.compare a t0 in
+          (match filtered_var with
+           | Lt ->
+             let filtered_var0 = FloatOTF.compare b t0 in
+             (match filtered_var0 with
+              | Lt -> FRange (a, b)
+              | _ -> FRange (a, t0))
+           | _ -> FEmpty))
 
 (** val floatConstraintRightSplit :
     float_test -> floatConstraint -> floatConstraint **)
@@ -128,11 +137,20 @@ let floatConstraintRightSplit t0 c =
   then if get_sign t0 then FEmpty else c
   else (match c with
         | FEmpty -> FEmpty
-        | FSingleton a -> if ltb a t0 then FEmpty else FSingleton a
+        | FSingleton a ->
+          let filtered_var = FloatOTF.compare a t0 in
+          (match filtered_var with
+           | Lt -> FEmpty
+           | _ -> FSingleton a)
         | FRange (a, b) ->
-          if ltb b t0
-          then FEmpty
-          else if ltb a t0 then FRange (t0, b) else FRange (a, b))
+          let filtered_var = FloatOTF.compare b t0 in
+          (match filtered_var with
+           | Lt -> FEmpty
+           | _ ->
+             let filtered_var0 = FloatOTF.compare a t0 in
+             (match filtered_var0 with
+              | Lt -> FRange (t0, b)
+              | _ -> FRange (a, b))))
 
 (** val senumConstraintLeftSplit :
     StringSet.t -> string_enum_test -> senumConstraint -> senumConstraint **)
@@ -154,7 +172,7 @@ let boolConstraintInitFull =
 (** val floatConstraintInitFull : floatConstraint **)
 
 let floatConstraintInitFull =
-  FRange (neg_infinity, infinity)
+  FRange (FloatOTF.neg_inf, FloatOTF.inf)
 
 (** val senumConstraintInitFull : StringSet.t -> senumConstraint **)
 

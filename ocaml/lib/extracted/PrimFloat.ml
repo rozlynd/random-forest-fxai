@@ -11,6 +11,10 @@ let eqb = Float64.eq
 
 let ltb = Float64.lt
 
+(** val leb : Float64.t -> Float64.t -> bool **)
+
+let leb = Float64.le
+
 (** val div : Float64.t -> Float64.t -> Float64.t **)
 
 let div = Float64.div

@@ -1,4 +1,4 @@
-From RFXP Require Import Utils Features DT Xp Explainers.
+From RFXP Require Import FloatUtils Utils Features DT Xp Explainers.
 
 Require Import Floats Equality Eqdep.
 
@@ -25,7 +25,7 @@ Section FeatureSpaceConstraint.
     Variant floatConstraint : Type :=
     | FEmpty
     | FSingleton (a : float_std)
-    | FRange (a b : float_std) (p : (proj1_sig a <? proj1_sig b)%float = true). (* [ a; b [ \ { -inf } *)
+    | FRange (a b : float_std) (p : FloatOTF.compare a b = Lt). (* [ a; b [ is b is finite, else [ a; +inf ] *)
 
     Variant senumConstraint (s : StringSet.t) : Type :=
     | SEnum (p : StringSet.t) (q : StringSet.Subset p s).
@@ -64,8 +64,8 @@ Section FeatureSpaceConstraint.
     Definition floatConstraintSat (c : floatConstraint) (x : float_std) : Prop :=
         match c with
         | FEmpty => False
-        | FSingleton a => (proj1_sig a =? proj1_sig x = true)%float
-        | FRange a b _ => (proj1_sig a <=? proj1_sig x = true)%float /\ (proj1_sig x <? proj1_sig b = true)%float
+        | FSingleton a =>  a = x (* Complication: FloatOTF.eq +0 -0 = true, so we use Logic.eq instead *)
+        | FRange a b _ => FloatOTF.le a x /\ (FloatOTF.eq b FloatOTF.inf \/ FloatOTF.lt x b)
         end.
 
     Definition senumConstraintSat {s : StringSet.t} (c : senumConstraint s) (x : string_enum s) : Prop :=
@@ -152,20 +152,20 @@ Section FeatureSpaceConstraint.
             match c with
             | FEmpty => FEmpty
             | FSingleton a =>
-                if proj1_sig a <? proj1_sig x then
-                    FSingleton a
-                else
-                    FEmpty
+                match FloatOTF.compare a x with
+                | Lt => FSingleton a
+                | _ => FEmpty
+                end
             | FRange a b p =>
-                if proj1_sig a <? proj1_sig x then
-                    if proj1_sig b <? proj1_sig x then
-                        FRange a b p
-                    else
-                        FRange a x _
-                else
-                    FEmpty
-            end%float.
-    Next Obligation. Admitted.
+                match FloatOTF.compare a x with
+                | Lt =>
+                    match FloatOTF.compare b x with
+                    | Lt => FRange a b p
+                    | _ => FRange a x _
+                    end
+                | _ => FEmpty
+                end
+            end.
 
     Program Definition floatConstraintRightSplit (t : float_test) (c : floatConstraint) : floatConstraint :=
         let '(float_lt x) := t in
@@ -178,20 +178,21 @@ Section FeatureSpaceConstraint.
             match c with
             | FEmpty => FEmpty
             | FSingleton a =>
-                if proj1_sig a <? proj1_sig x then
-                    FEmpty
-                else
-                    FSingleton a
+                match FloatOTF.compare a x with
+                | Lt => FEmpty
+                | _ => FSingleton a
+                end
             | FRange a b p =>
-                if proj1_sig b <? proj1_sig x then
-                    FEmpty
-                else
-                    if proj1_sig a <? proj1_sig x then
-                        FRange x b _
-                    else
-                        FRange a b p
-            end%float.
-    Next Obligation. Admitted.
+                match FloatOTF.compare b x with
+                | Lt => FEmpty
+                | _ =>
+                    match FloatOTF.compare a x with
+                    | Lt => FRange x b _
+                    | _ => FRange a b p
+                    end
+                end
+            end.
+    Admit Obligations.
 
     Program Definition senumConstraintLeftSplit {s : StringSet.t} (t : string_enum_test s) (c : senumConstraint s) : senumConstraint s :=
         let '(subset_mem _ filt) := t in
@@ -217,7 +218,7 @@ Section FeatureSpaceConstraint.
     (* Initialize a constraint as either the full domain or a singleton value *)
 
     Definition boolConstraintInitFull := BAny.
-    Program Definition floatConstraintInitFull := FRange (exist _ neg_infinity _) (exist _ infinity _) _.
+    Program Definition floatConstraintInitFull := FRange FloatOTF.neg_inf FloatOTF.inf _.
     Definition senumConstraintInitFull (s : StringSet.t) := SEnum s s (@Subset_refl _).
 
     Definition boolConstraintInitSingleton (b : bool) :=
@@ -290,17 +291,41 @@ Section FeatureSpaceConstraint.
     Theorem floatConstraintSatNotEmpty :
         forall (c : floatConstraint) (x : float_std),
             floatConstraintSat c x -> floatConstraintEmpty c = false.
-    Admitted.
+    Proof. intros c x H; destruct c; now inversion H. Qed.
 
     Theorem floatConstraintWitnessSomeSat :
         forall (c : floatConstraint) (x : float_std),
             floatConstraintWitness c = Some x -> floatConstraintSat c x.
-    Admitted.
+    Proof.
+        intros c x; destruct c; simpl; intros H; try (now inversion H);
+        destruct (is_infinity (proj1_sig a)) eqn:Hinfa.
+        -   assert (Ea : FloatOTF.eq a FloatOTF.neg_inf).
+            {
+                apply FloatOTFFacts.inf_lower_isn with (y := b); try assumption;
+                now apply FloatOTFFacts.compare_lt_iff.
+            }
+            destruct (is_infinity (proj1_sig b)) eqn:Hinfb.
+            +   assert (Eb : FloatOTF.eq b FloatOTF.inf).
+                {
+                    apply FloatOTFFacts.inf_upper_isp with (x := a); try assumption;
+                    now apply FloatOTFFacts.compare_lt_iff.
+                }
+                destruct x as (x & px); inversion H; split; try (now left);
+                rewrite Ea; apply FloatOTFFacts.le_neg_inf.
+            +   split; try (rewrite Ea; apply FloatOTFFacts.le_neg_inf);
+                inversion H; destruct x as (x & px); right; apply FloatOTFFacts.next_down_lt.
+        -   inversion H; split; try apply FloatOTFFacts.le_preorder;
+            subst x; right; now apply FloatOTFFacts.compare_lt_iff.
+    Qed.
 
     Theorem floatConstraintWitnessNoneEmpty :
         forall (c : floatConstraint),
             floatConstraintWitness c = None -> floatConstraintEmpty c = true.
-    Admitted.
+    Proof.
+        intros c H; destruct c; try (now inversion H); simpl in H;
+        destruct (is_infinity (proj1_sig a)); destruct (is_infinity (proj1_sig b));
+        inversion H.
+    Qed.
 
     Theorem floatConstraintSatSplitLeft :
         forall (c : floatConstraint) (t : float_test) (x : float_std),
@@ -317,17 +342,17 @@ Section FeatureSpaceConstraint.
     Theorem floatConstraintInitFullSat :
         forall (x : float_std),
             floatConstraintSat floatConstraintInitFull x.
-    Admitted.
+    Proof. intros x; split; [ apply FloatOTFFacts.le_neg_inf | now left ]. Qed.
 
     Theorem floatConstraintWitnessSingleton :
         forall (x : float_std),
             floatConstraintWitness (floatConstraintInitSingleton x) = Some x.
-    Admitted.
+    Proof. now intros. Qed.
 
     Theorem floatConstraintSatSingletonUnique :
         forall (x y : float_std),
             floatConstraintSat (floatConstraintInitSingleton x) y -> x = y.
-    Admitted.
+    Proof. now intros. Qed.
 
 
     Theorem senumConstraintSatNotEmpty :
