@@ -4,10 +4,21 @@ from sklearn.tree import _tree
 
 from export_sklearn_data.export_tree import export_tree
 from export_sklearn_data.export_vector import export_vector
+from export_sklearn_data.export_features import export_features
 
 from dt_explanation import explain
 
 
+def test_features():
+    iris = load_iris()
+    X = iris['data']
+
+    # export tree in string
+    print("begin export...")
+    r = export_features(X[0])
+    print("export finished.")
+    print("the result :\n")
+    print(r)
 
 def test_export_tree():
 
@@ -66,7 +77,7 @@ def test_complete():
 
 
 if __name__ == "__main__":
-    test_complete()
+    test_features()
 
 
 

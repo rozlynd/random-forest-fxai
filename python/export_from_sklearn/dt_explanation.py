@@ -5,6 +5,7 @@ import subprocess
 
 from export_sklearn_data.export_tree import export_tree
 from export_sklearn_data.export_vector import export_vector
+from export_sklearn_data.export_features import export_features
 from utils import write_str_in_file
 
 
@@ -18,7 +19,7 @@ def explain(features: str, dt: tree.DecisionTreeClassifier, v: list, filename: s
 
     ## write the features, the tree and the vector in a file
     log("begin export...", verbose)
-    text_features = features
+    text_features = export_features(v)
     text_tree = export_tree(dt)
     text_vector = export_vector(v)
     text = text_features + "\n\n" + text_tree + "\n\n" + text_vector + "\n\n"

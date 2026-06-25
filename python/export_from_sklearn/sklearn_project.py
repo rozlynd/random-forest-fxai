@@ -20,7 +20,7 @@ def main():
     ## create features_list
     features = "F(float, float, float, float)"
 
-    explain(features, dt, v, verbose=True)
+    explain("a", dt, v, verbose=True) # NB : le "a" ne veut rien dire, mais n'est pas lu dans explain.
 
 if __name__ == "__main__":
     main()
