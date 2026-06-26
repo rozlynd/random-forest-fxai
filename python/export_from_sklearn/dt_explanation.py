@@ -30,17 +30,20 @@ def explain(features: str, dt: tree.DecisionTreeClassifier, v: list, filename: s
     ## compile ocaml code
     log("begin import in ocaml...", verbose)
 
-    ocaml_path = "/home/jack/stage/tree_py_to_ml/depot_rfxp/formally-certified-classifiers/ocaml"
+    verification_prog_path = "../../ocaml/_build/default/bin"
 
-    commands = f"""
+    _commands = f"""
     CURRENT_PROG_PATH=$(pwd)
-    cd {ocaml_path}
+    cd {verification_prog_path}
     dune build
     dune exec rfxp $CURRENT_PROG_PATH/{filename}
     """
+    commands = f"""./{verification_prog_path}/main.exe {filename}"""
 
     res = subprocess.run(commands, capture_output=True, shell=True, executable="/bin/bash")
-    print("Output:", res.stdout)
+    res_str = str(res.stdout, "utf-8")
+    print("output :", res_str)
+    
 
 
     log("end import in ocaml.", verbose)
