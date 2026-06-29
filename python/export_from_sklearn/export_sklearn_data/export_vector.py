@@ -1,4 +1,3 @@
-# import sklearn
 
 def export_vector(v: list)-> str:
     """
@@ -10,6 +9,7 @@ def export_vector(v: list)-> str:
 
     r = "V("
 
+    ## construct the returned string element by element (with hex repr for floating numbers)
     for e in v:
         if isinstance(e, float):
             e_str = e.hex()
@@ -17,7 +17,7 @@ def export_vector(v: list)-> str:
             e_str = str(e)
         r += e_str + ", "
     
-    # remove the last ", "
+    ## remove the last ", "
     if r[-2:] == ", ":
         r = r[:-2]
     

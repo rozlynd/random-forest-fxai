@@ -5,7 +5,11 @@ from dt_explanation import explain
 
 
 def main():
-    filename = "output.txt"
+    """Example of how to use the Decision Tree explanation module.
+    This example uses the iris dataset from `sklearn.datasets`."""
+    
+    ## the name of the temp file used to give data to ocaml.
+    filename_ = "output.txt"
 
     ## load data
     iris = load_iris()
@@ -17,10 +21,8 @@ def main():
     ## create vector
     v = X[0]
 
-    ## create features_list
-    features = "F(float, float, float, float)"
+    explain(dt, v, filename=filename_, verbose=True)
 
-    explain("a", dt, v, verbose=True) # NB : le "a" ne veut rien dire, mais n'est pas lu dans explain.
 
 if __name__ == "__main__":
     main()

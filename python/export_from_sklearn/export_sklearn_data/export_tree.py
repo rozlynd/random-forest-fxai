@@ -1,4 +1,3 @@
-# import sklearn
 import numpy as np
 from sklearn import tree
 from sklearn.tree import _tree
@@ -52,28 +51,30 @@ def export_tree(dt: tree.DecisionTreeClassifier)-> str:
         """
         Recursive function writing in the string `r` the informations about the node `node`.\n
         `node` is the index of the current node.
+        `prefix` is the string to write before the node informations in r, 
+        it is used to put identations for the file to be more readable.
         """
 
         ## exhaustion : node/leaf
         if t.feature[node] != _tree.TREE_UNDEFINED:
             ## node case
 
-            lci = t.children_left[node]
-            rci = t.children_right[node]
+            left_child_index = t.children_left[node]
+            right_child_index = t.children_right[node]
 
-            line =  prefix + "N(" + \
-                    str(t.feature[node]) + ", " + \
-                    t.threshold[node].hex() + ", " + \
-                    str(lci) + ", " + \
-                    str(rci) + \
-                    "),"
-            
-            # print(f"debug : node[{node}] = {line}")
+            line = (
+                prefix + "N(" +
+                str(t.feature[node]) + ", " +
+                t.threshold[node].hex() + ", " + # use the hex representation of floats to avoid approximations
+                str(left_child_index) + ", " +
+                str(right_child_index) +
+                "),"
+            )
 
             r.append(line)
 
-            f(r, t.children_left[node], prefix + " ")
-            f(r, t.children_right[node], prefix + " ")
+            f(r, left_child_index, prefix + " ")
+            f(r, right_child_index, prefix + " ")
         else:
             ## leaf case
 
@@ -82,16 +83,19 @@ def export_tree(dt: tree.DecisionTreeClassifier)-> str:
             else:
                 value = t.value[node].T[0]
             class_name = np.argmax(value)
-            # print(f"debug : leaf[{node}] = {class_name}")
 
             line = prefix + "L(" + str(class_name) + "),"
             r.append(line)
     
     r.append("T(")
+
+    ## call on the root node (index 0)
     f(r, 0, "\t")
-    # remove the last ','
+
+    ## remove the last ','
     if r[-1][-1] == ",":
         r[-1] = r[-1][:-1]
+    
     r.append(")")
 
     return flatten_str_list(r)

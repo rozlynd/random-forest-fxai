@@ -13,14 +13,15 @@ def export_features(v: list)-> str:
 
     r = "F("
 
+    ## check that each element has type `float` (and construct the returned string)
     for e in v:
         if isinstance(e, float):
             e_str = "float"
         else:
-            raise TypeError("features must be of type float.")
+            raise TypeError("Error in export_features : features must be of type float.")
         r += e_str + ", "
     
-    # remove the last ", "
+    ## remove the last ", "
     if r[-2:] == ", ":
         r = r[:-2]
     
