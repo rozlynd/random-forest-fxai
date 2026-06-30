@@ -327,6 +327,15 @@ Section FeatureSpaceConstraint.
         inversion H.
     Qed.
 
+    Lemma float_test_compare :
+        forall (x y : float_std), tests float_feature (float_lt y) x = true <-> FloatOTF.compare x y = Lt.
+    Proof.
+        intros x y; rewrite FloatOTFFacts.compare_lt_iff, FloatOTFFacts.lt_not_ge_iff;
+        split; simpl; intros H; destruct x; destruct y; simpl.
+        -   intros abs; now rewrite Bool.negb_true_iff, abs in H.
+        -   now apply Bool.eq_true_not_negb_iff.
+    Qed.
+
     Theorem floatConstraintSatSplitLeft :
         forall (c : floatConstraint) (t : float_test) (x : float_std),
             floatConstraintSat (floatConstraintLeftSplit t c) x <->
