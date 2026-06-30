@@ -1,0 +1,9 @@
+(ocamllex lexer)
+
+(menhir
+ (modules parser))
+
+(library
+ (name dttxt)
+ (modules lexer parser parse_file parsing_utils)
+ (flags -w -unused-open))

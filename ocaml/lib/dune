@@ -2,5 +2,5 @@
 
 (library
  (name rfxp)
- (libraries coq-core.kernel)
+ (libraries dttxt coq-core.kernel)
  (flags -w -unused-open))

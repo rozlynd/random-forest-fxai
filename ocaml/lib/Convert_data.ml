@@ -1,5 +1,5 @@
 (* open Extracted *)
-open Import
+open Dttxt
 
 open Parsing_utils
 open Extracted.DT
