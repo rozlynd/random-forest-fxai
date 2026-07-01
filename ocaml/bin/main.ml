@@ -56,9 +56,10 @@ type mode =
   | All
 ;;
 
-(* write a string message in a file named filename. *)
+(* Write a string message in a file named filename. *)
 let write_in_file message filename = 
-  let oc = open_out filename in
+  (* let oc = open_out ~mode:Open_append filename in *)
+  let oc = open_out_gen [Open_append; Open_creat] 0o666 filename in
   Printf.fprintf oc "%s\n" message;
   close_out oc
 ;;
@@ -84,6 +85,7 @@ let main_file verbose mode input_file output_file =
       let axp = FindA.findAXp Input.S.all in
       let outA = string_of_int_list (as_list (module Input.S) axp) in
       print_endline ("AXp : " ^ outA);
+      write_in_file ("AXp : " ^ outA) output_file;
     end;
     
   if mode = CXp || mode = Both then
@@ -92,6 +94,7 @@ let main_file verbose mode input_file output_file =
       let cxp = FindC.findCXp Input.S.all in
       let outC = string_of_int_list (as_list (module Input.S) cxp) in
       print_endline ("CXp : " ^ outC);
+      write_in_file ("CXp : " ^ outC) output_file;
     end;
   
   write_in_file "test" output_file;
@@ -134,8 +137,9 @@ let () =
     else
       failwith ("Error in command line arguments.\n" ^ help_string)
   done;
-  main_file !verbose !mode !input_file !output_file
-
+  if !input_file_given then 
+    main_file !verbose !mode !input_file !output_file
+  else failwith "no input file given"
 
 
 

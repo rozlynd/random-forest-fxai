@@ -21,7 +21,8 @@ def main():
     ## create vector
     v = X[0]
 
-    explain(dt, v, filename=filename_, verbose=True)
+    res_obj = explain(dt, v, data_filename=filename_, verbose=True)
+    print(res_obj)
 
 
 if __name__ == "__main__":
@@ -40,3 +41,4 @@ if __name__ == "__main__":
 
 # # Predict the response for test dataset
 # y_pred = clf.predict(X_test)
+
